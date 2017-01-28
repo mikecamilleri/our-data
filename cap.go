@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -151,6 +152,56 @@ type alert struct {
 	} `xml:"info"`
 }
 
+type NamedValue struct {
+	ValueName string
+	Value     string
+}
+
+type Resource struct {
+	ResourceDesc string
+	MIMEType     string
+	Size         int // approximate size in bytes
+	URI          *url.URL
+	DerefURI     string // base-64 encoded binary
+	Digest       string // SHA-1 hash
+}
+
+type Area struct {
+	AreaDesc string
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	// The coordinate system used is WGS 84.
+	Polygons []Polygon
+	Circles  []Circle
+	Geocodes []NamedValue
+	Altitude string // decimal feet above mean sea level
+	Ceiling  string // decimal feet above mean sea level
+}
+
+type Info struct {
+	Language      string
+	Categories    []string
+	Event         string
+	ResponseTypes []string
+	Urgency       string
+	Severity      string
+	Certainty     string
+	Audience      string
+	EventCodes    []NamedValue
+	Effective     time.Time
+	Onset         time.Time
+	Expires       time.Time
+	SenderName    string
+	Headline      string
+	Description   string
+	Instruction   string
+	Web           *url.URL
+	Contact       string
+	Parameters    []NamedValue
+	Resources     []Resource
+	Areas         []Area
+}
+
 // Alert represents a parsed and validated CAP alert
 type Alert struct {
 	// TODO: add namespace support to distiguish CAP versions
@@ -168,55 +219,7 @@ type Alert struct {
 	Note        string
 	References  []Reference
 	Incidents   []string
-	Info        []struct {
-		Language      string
-		Categories    []string
-		Event         string
-		ResponseTypes []string
-		Urgency       string
-		Severity      string
-		Certainty     string
-		Audience      string
-		EventCodes    []struct {
-			ValueName string
-			Value     string
-		}
-		Effective   time.Time
-		Onset       time.Time
-		Expires     time.Time
-		SenderName  string
-		Headline    string
-		Description string
-		Instruction string
-		Web         url.URL
-		Contact     string
-		Parameters  []struct {
-			ValueName string
-			Value     string
-		}
-		Resources []struct {
-			ResourceDesc string
-			MIMEType     string
-			Size         int // approximate size in bytes
-			URI          url.URL
-			DerefURI     string // base-64 encoded binary
-			Digest       string // SHA-1 hash
-		}
-		Areas []struct {
-			AreaDesc string
-			// because golang has no built in support for decimals, these values
-			// are being left as `string` so the caller can handle as necessary.
-			// The coordinate system used is WGS 84.
-			Polygons []Polygon
-			Circles  []Circle
-			Geocodes []struct {
-				ValueName string
-				Value     string
-			}
-			Altitude string // decimal feet above mean sea level
-			Ceiling  string // decimal feet above mean sea level
-		}
-	}
+	Info        []Info
 }
 
 // isValidTimeString tests whether a time string is valid
@@ -344,8 +347,11 @@ func isValidReferencesString(referenceString string) bool {
 func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
 	// we use strings.SplitAfter to retain multiple whitespace in quoted
 	// sections
-	words := strings.SplitAfter(spaceDelimitedQuotedStrings, " ")
 	var fields []string
+	if len(spaceDelimitedQuotedStrings) == 0 {
+		return fields
+	}
+	words := strings.SplitAfter(spaceDelimitedQuotedStrings, " ")
 	var currField string
 	for _, word := range words {
 		if strings.HasPrefix(word, `"`) {
@@ -501,6 +507,10 @@ func (a *alert) validate() error {
 				missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].resource[%d].mimeType", i, j))
 			}
 
+			if size, err := strconv.Atoi(resource.Size); err != nil || size < 0 {
+				errorStrings = append(errorStrings, "invalid alert.info.resource.size")
+			}
+
 			if len(resource.URI) > 0 && !isValidURLString(resource.URI) {
 				errorStrings = append(errorStrings, "invalid alert.info.resource.uri URL")
 			}
@@ -538,7 +548,114 @@ func (a *alert) validate() error {
 }
 
 func (a *alert) convert() (*Alert, error) {
-	return nil, nil
+	var r Alert // the Alert to be returned
+	var err error
+
+	r.Identifier = a.Identifier
+	r.Sender = a.Sender
+	if r.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
+		return nil, err
+	}
+	r.Status = a.Status
+	r.MsgType = a.MsgType
+	r.Source = a.Source
+	r.Scope = a.Scope
+	r.Restriction = a.Restriction
+	r.Addresses = parseAddressesString(a.Addresses)
+	r.Codes = a.Codes
+	r.Note = a.Note
+	if r.References, err = parseReferencesString(a.References); err != nil {
+		return nil, err
+	}
+	r.Incidents = parseIncidentsString(a.Incidents)
+
+	for _, aInfo := range a.Info {
+		var rInfo Info
+
+		if len(aInfo.Language) == 0 {
+			rInfo.Language = "en-US"
+		} else {
+			rInfo.Language = aInfo.Language
+		}
+		rInfo.Categories = aInfo.Categories
+		rInfo.Event = aInfo.Event
+		rInfo.ResponseTypes = aInfo.ResponseTypes
+		rInfo.Urgency = aInfo.Urgency
+		rInfo.Severity = aInfo.Severity
+		rInfo.Certainty = aInfo.Certainty
+		rInfo.Audience = aInfo.Audience
+		for _, ec := range aInfo.EventCodes {
+			rInfo.EventCodes = append(rInfo.EventCodes, NamedValue{ValueName: ec.ValueName, Value: ec.Value})
+		}
+		if rInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
+			return nil, err
+		}
+		if rInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
+			return nil, err
+		}
+		if rInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
+			return nil, err
+		}
+		rInfo.SenderName = aInfo.SenderName
+		rInfo.Headline = aInfo.Headline
+		rInfo.Description = aInfo.Description
+		rInfo.Instruction = aInfo.Instruction
+		if rInfo.Web, err = url.Parse(aInfo.Web); err != nil {
+			return nil, err
+		}
+		rInfo.Contact = aInfo.Contact
+		for _, p := range aInfo.Parameters {
+			rInfo.Parameters = append(rInfo.Parameters, NamedValue{ValueName: p.ValueName, Value: p.Value})
+		}
+
+		for _, aiResource := range aInfo.Resources {
+			var rResource Resource
+
+			rResource.ResourceDesc = aiResource.ResourceDesc
+			rResource.MIMEType = aiResource.MIMEType
+			if rResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
+				return nil, err
+			}
+			if rResource.URI, err = url.Parse(aiResource.URI); err != nil {
+				return nil, err
+			}
+			rResource.DerefURI = aiResource.Digest
+			rResource.Digest = aiResource.Digest
+
+			rInfo.Resources = append(rInfo.Resources, rResource)
+		}
+
+		for _, aiArea := range aInfo.Areas {
+			var rArea Area
+
+			rArea.AreaDesc = aiArea.AreaDesc
+			for _, p := range aiArea.Polygons {
+				if parsed, err := parsePolygonString(p); err != nil {
+					return nil, err
+				} else {
+					rArea.Polygons = append(rArea.Polygons, parsed)
+				}
+			}
+			for _, c := range aiArea.Circles {
+				if parsed, err := parseCircleString(c); err != nil {
+					return nil, err
+				} else {
+					rArea.Circles = append(rArea.Circles, parsed)
+				}
+			}
+			for _, g := range aiArea.Geocodes {
+				rArea.Geocodes = append(rArea.Geocodes, NamedValue{ValueName: g.ValueName, Value: g.Value})
+			}
+			rArea.Altitude = aiArea.Altitude
+			rArea.Ceiling = aiArea.Ceiling
+
+			rInfo.Areas = append(rInfo.Areas, rArea)
+		}
+
+		r.Info = append(r.Info, rInfo)
+	}
+
+	return &r, nil
 }
 
 // ProcessAlertMessageXML takes an XML CAP alert message and returns an Alert struct
