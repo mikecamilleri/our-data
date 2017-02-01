@@ -1,3 +1,7 @@
+/*
+	Package cap implements the ability to parse and validate OASIS Common
+	Alerting Protocol Alert Messages
+*/
 package cap
 
 import (
@@ -88,7 +92,7 @@ var (
 	}
 )
 
-// Alert represents a parsed and validated CAP alert
+// Alert represents a parsed and validated CAP alert message
 type Alert struct {
 	// TODO: add namespace support to distiguish CAP versions
 	// CAPVersion  string
@@ -108,6 +112,7 @@ type Alert struct {
 	Infos       []*Info
 }
 
+// Info
 type Info struct {
 	Language      string
 	Categories    []string
@@ -132,6 +137,7 @@ type Info struct {
 	Areas         []*Area
 }
 
+// Resource
 type Resource struct {
 	ResourceDesc string
 	MIMEType     string
@@ -141,6 +147,7 @@ type Resource struct {
 	Digest       string // SHA-1 hash
 }
 
+// Area
 type Area struct {
 	AreaDesc string
 	// Polygon is already a reference type, but we want a pointer here for
@@ -160,19 +167,19 @@ type NamedValue struct {
 	Value     string
 }
 
-// Reference
+// Reference holds a reference to another alert
 type Reference struct {
 	Sender     string
 	Identifier string
 	Sent       time.Time
 }
 
-// parseReferencesString
+// parseReferencesString parses a references string
 func parseReferencesString(referencesString string) ([]*Reference, error) {
 	refStrings := strings.Fields(referencesString)
 	var refs []*Reference
-	for _, s := range refStrings {
-		parts := strings.Split(s, ",")
+	for _, rs := range refStrings {
+		parts := strings.Split(rs, ",")
 		if len(parts) != 3 {
 			return nil, errors.New("reference must contain three parts")
 		}
@@ -185,6 +192,7 @@ func parseReferencesString(referencesString string) ([]*Reference, error) {
 	return refs, nil
 }
 
+// isValidReferencesString tests whether a references string is valid
 func isValidReferencesString(referenceString string) bool {
 	if _, err := parseReferencesString(referenceString); err != nil {
 		return false
@@ -192,7 +200,7 @@ func isValidReferencesString(referenceString string) bool {
 	return true
 }
 
-// Point represents a WGS 84 coordinate point on the earth
+// Point defines a WGS 84 coordinate point on the earth
 type Point struct {
 	// because golang has no built in support for decimals, these values
 	// are being left as `string` so the caller can handle as necessary.
@@ -200,10 +208,10 @@ type Point struct {
 	Longitude string
 }
 
-// Polygon
+// Polygon defines a polygonal area
 type Polygon []Point
 
-// parsePolygon parses a polygon string
+// parsePolygonString parses a polygon string
 func parsePolygonString(polygonString string) (*Polygon, error) {
 	// 38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89 38.47,-120.14
 	// TODO: test validity of numbers
@@ -218,7 +226,6 @@ func parsePolygonString(polygonString string) (*Polygon, error) {
 			return nil, errors.New("point must contain exactly two values")
 		}
 		polygon = append(polygon, Point{Latitude: vals[0], Longitude: vals[1]})
-
 	}
 	if polygon[0] != polygon[len(polygon)-1] {
 		return nil, errors.New("first and last points must be equal")
@@ -226,7 +233,7 @@ func parsePolygonString(polygonString string) (*Polygon, error) {
 	return &polygon, nil
 }
 
-// isValidPolygon tests whether a polygon string is valid
+// isValidPolygonString tests whether a polygon string is valid
 func isValidPolygonString(polygonString string) bool {
 	if _, err := parsePolygonString(polygonString); err != nil {
 		return false
@@ -234,7 +241,7 @@ func isValidPolygonString(polygonString string) bool {
 	return true
 }
 
-// Circle
+// Circle defines a circular area
 type Circle struct {
 	// because golang has no built in support for decimals, these values
 	// are being left as `string` so the caller can handle as necessary.
@@ -251,16 +258,16 @@ func parseCircleString(circleString string) (*Circle, error) {
 	if len(pointRadiusStrings) != 2 {
 		return nil, errors.New("a circle must contain a central point and a radius")
 	}
-	pointStrings := strings.Split(pointRadiusStrings[0], ",")
-	if len(pointStrings) != 2 {
+	psVals := strings.Split(pointRadiusStrings[0], ",")
+	if len(psVals) != 2 {
 		return nil, errors.New("central point must contain exactly two values")
 	}
-	radiusString := pointRadiusStrings[1]
-	circle := Circle{Point: Point{Latitude: pointStrings[0], Longitude: pointStrings[1]}, Radius: radiusString}
+	rsVal := pointRadiusStrings[1]
+	circle := Circle{Point: Point{Latitude: psVals[0], Longitude: psVals[1]}, Radius: rsVal}
 	return &circle, nil
 }
 
-// isValidCircle tests whether a circle string is valid
+// isValidCircleString tests whether a circle string is valid
 func isValidCircleString(circleString string) bool {
 	if _, err := parseCircleString(circleString); err != nil {
 		return false
@@ -268,7 +275,83 @@ func isValidCircleString(circleString string) bool {
 	return true
 }
 
-// alert is an unexported struct used to unmarshal a CAP alert message into
+// isValidTimeString tests whether a time string is valid
+func isValidTimeString(timeString string) bool {
+	if _, err := time.Parse(timeFormat, timeString); err != nil {
+		return false
+	}
+	return true
+}
+
+// isValidURLString tests whether a URL string is valid
+func isValidURLString(urlString string) bool {
+	if _, err := url.Parse(urlString); err != nil {
+		return false
+	}
+	return true
+}
+
+// parseAddressesString parses an addresses string
+func parseAddressesString(addressesString string) []string {
+	return splitSpaceDelimitedQuotedStrings(addressesString)
+}
+
+// isValidAddressesString tests whether an addresses string is valid
+func isValidAddressesString(addressesString string) bool {
+	if parseAddressesString(addressesString) == nil {
+		return false
+	}
+	return true
+}
+
+// parseIncidentsString parases an incidents string
+func parseIncidentsString(indidentsString string) []string {
+	return splitSpaceDelimitedQuotedStrings(indidentsString)
+}
+
+// isValidIncidentsString tests whether an incidentas string is valid
+func isValidIncidentsString(incidentsString string) bool {
+	if parseIncidentsString(incidentsString) == nil {
+		return false
+	}
+	return true
+}
+
+// splitSpaceDelimitedQuotedStrings splits space delimited quoted strings into
+// a slice of strings
+func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
+	// we use strings.SplitAfter to retain multiple whitespace in quoted
+	// sections
+	var fields []string
+	if len(spaceDelimitedQuotedStrings) == 0 {
+		return nil
+	}
+	words := strings.SplitAfter(spaceDelimitedQuotedStrings, ` `)
+	var currField string
+	for _, word := range words {
+		if strings.HasPrefix(word, `"`) {
+			// first word of quoted section
+			trimmed := strings.TrimPrefix(word, `"`)
+			currField = trimmed
+		} else if len(currField) == 0 {
+			// this block handles words not in a quoted section
+			fields = append(fields, strings.TrimSuffix(word, ` `))
+		} else if strings.HasSuffix(word, `" `) {
+			// last word of quoted section
+			trimmed := strings.TrimSuffix(word, `" `)
+			currField += trimmed
+			fields = append(fields, currField)
+			currField = ""
+		} else {
+			// intermediate word of quoted section
+			currField += word
+		}
+	}
+	return fields
+}
+
+// alert is an unexported struct used internally to unmarshal a CAP alert
+// message XML into
 type alert struct {
 	// TODO: need to add namespace support to distiguish CAP versions
 	Identifier  string   `xml:"indentifier"`
@@ -332,140 +415,70 @@ type alert struct {
 	} `xml:"info"`
 }
 
-// isValidTimeString tests whether a time string is valid
-func isValidTimeString(timeString string) bool {
-	// not returning the error might be improper here, but I like that this
-	// returns a simple boolean value.
-	if _, err := time.Parse(timeFormat, timeString); err != nil {
-		return false
-	}
-	return true
-}
-
-// isValidURLString tests whether a URL is valid
-func isValidURLString(urlString string) bool {
-	// not returning the error might be improper here, but I like that this
-	// returns a simple boolean value.
-	if _, err := url.Parse(urlString); err != nil {
-		return false
-	}
-	return true
-}
-
-func parseAddressesString(addressesString string) []string {
-	return splitSpaceDelimitedQuotedStrings(addressesString)
-}
-
-func isValidAddressesString(addressesString string) bool {
-	if parseAddressesString(addressesString) == nil {
-		return false
-	}
-	return true
-}
-
-func parseIncidentsString(indidentsString string) []string {
-	return splitSpaceDelimitedQuotedStrings(indidentsString)
-}
-
-func isValidIncidentsString(incidentsString string) bool {
-	if parseIncidentsString(incidentsString) == nil {
-		return false
-	}
-	return true
-}
-
-func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
-	// we use strings.SplitAfter to retain multiple whitespace in quoted
-	// sections
-	var fields []string
-	if len(spaceDelimitedQuotedStrings) == 0 {
-		return nil
-	}
-	words := strings.SplitAfter(spaceDelimitedQuotedStrings, " ")
-	var currField string
-	for _, word := range words {
-		if strings.HasPrefix(word, `"`) {
-			// first word of quoted section
-			trimmed := strings.TrimPrefix(word, `"`)
-			currField = trimmed
-		} else if len(currField) == 0 {
-			// this block handles words not in a quoted section
-			fields = append(fields, strings.TrimSuffix(word, " "))
-		} else if strings.HasSuffix(word, `" `) {
-			// last word of quoted section
-			trimmed := strings.TrimSuffix(word, `" `)
-			currField += trimmed
-			fields = append(fields, currField)
-			currField = ""
-		} else {
-			// intermediate word of quoted section
-			currField += word
-		}
-	}
-	return fields
-}
-
+// validate validates that the content of an alert struct conforms to the CAP
+// 1.2 specification
+// TODO: implement validation for CAP 1.1 and 1.0
 func (a *alert) validate() error {
-	var errorStrings []string
+	var errStrs []string
 	var missingElements []string
 
 	if len(a.Identifier) == 0 {
 		missingElements = append(missingElements, "alert.identifier")
 	} else if strings.ContainsAny(a.Identifier, restrictedCharacters) {
-		errorStrings = append(errorStrings, "alert.identifier contains contains one or more restricted characters")
+		errStrs = append(errStrs, "alert.identifier contains contains one or more restricted characters")
 	}
 
 	if len(a.Sender) == 0 {
 		missingElements = append(missingElements, "alert.sender")
 	} else if strings.ContainsAny(a.Sender, restrictedCharacters) {
-		errorStrings = append(errorStrings, "alert.sender contains contains one or more restricted characters")
+		errStrs = append(errStrs, "alert.sender contains contains one or more restricted characters")
 	}
 
 	if len(a.Sent) == 0 {
 		missingElements = append(missingElements, "alert.sent")
 	} else if !isValidTimeString(a.Sent) {
-		errorStrings = append(errorStrings, "invalid alert.sent time")
+		errStrs = append(errStrs, "invalid alert.sent time")
 	}
 
 	if len(a.Status) == 0 {
 		missingElements = append(missingElements, "alert.status")
 	} else if _, ok := AlertStatuses[a.Status]; !ok {
-		errorStrings = append(errorStrings, "invalid alert.status")
+		errStrs = append(errStrs, "invalid alert.status")
 	}
 
 	if len(a.MsgType) == 0 {
 		missingElements = append(missingElements, "alert.msgType")
 	} else if _, ok := AlertMsgTypes[a.MsgType]; !ok {
-		errorStrings = append(errorStrings, "invalid alert.msgType")
+		errStrs = append(errStrs, "invalid alert.msgType")
 	}
 
 	if len(a.Scope) == 0 {
 		missingElements = append(missingElements, "alert.scope")
 	} else if _, ok := AlertScopes[a.Scope]; !ok {
-		errorStrings = append(errorStrings, "invalid alert.scope")
+		errStrs = append(errStrs, "invalid alert.scope")
 	} else if a.Scope == "Restricted" && len(a.Restriction) == 0 {
-		errorStrings = append(errorStrings, "if alert.scope is Restricted must have alert.restriction")
+		errStrs = append(errStrs, "if alert.scope is Restricted must have alert.restriction")
 	} else if a.Scope != "Restricted" && len(a.Restriction) > 0 {
-		errorStrings = append(errorStrings, "if alert.scope is not Restricted must not have alert.restriction")
+		errStrs = append(errStrs, "if alert.scope is not Restricted must not have alert.restriction")
 	} else if a.Scope == "Private" && len(a.Addresses) == 0 {
-		errorStrings = append(errorStrings, "if alert.scope is Private must have alert.addresses")
+		errStrs = append(errStrs, "if alert.scope is Private must have alert.addresses")
 	}
 
 	if len(a.Addresses) > 0 {
 		if !isValidAddressesString(a.Addresses) {
-			errorStrings = append(errorStrings, "invalid alert.addresses")
+			errStrs = append(errStrs, "invalid alert.addresses")
 		}
 	}
 
 	if len(a.References) > 0 {
 		if !isValidReferencesString(a.References) {
-			errorStrings = append(errorStrings, "invalid alert.info[%d].area[%d].circle[%d]")
+			errStrs = append(errStrs, "invalid alert.info[%d].area[%d].circle[%d]")
 		}
 	}
 
 	if len(a.Incidents) > 0 {
 		if !isValidIncidentsString(a.Incidents) {
-			errorStrings = append(errorStrings, "invalid alert.incidents")
+			errStrs = append(errStrs, "invalid alert.incidents")
 		}
 	}
 
@@ -475,7 +488,7 @@ func (a *alert) validate() error {
 		} else {
 			for j, cat := range info.Categories {
 				if _, ok := AlertInfoCategories[cat]; !ok {
-					errorStrings = append(errorStrings, fmt.Sprintf("invalid alert.info.category[%d]", j))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info.category[%d]", j))
 				}
 			}
 		}
@@ -486,42 +499,42 @@ func (a *alert) validate() error {
 
 		for i, respType := range info.ResponseTypes {
 			if _, ok := AlertInfoResponseTypes[respType]; !ok {
-				errorStrings = append(errorStrings, fmt.Sprintf("invalid alert.info.responseType[%d]", i))
+				errStrs = append(errStrs, fmt.Sprintf("invalid alert.info.responseType[%d]", i))
 			}
 		}
 
 		if len(info.Urgency) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].urgency", i))
 		} else if _, ok := AlertInfoUrgencies[info.Urgency]; !ok {
-			errorStrings = append(errorStrings, "invalid alert.info.urgency")
+			errStrs = append(errStrs, "invalid alert.info.urgency")
 		}
 
 		if len(info.Severity) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].severity", i))
 		} else if _, ok := AlertInfoSeverities[info.Severity]; !ok {
-			errorStrings = append(errorStrings, "invalid alert.info.severity")
+			errStrs = append(errStrs, "invalid alert.info.severity")
 		}
 
 		if len(info.Certainty) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].certainty", i))
 		} else if _, ok := AlertInfoCertainties[info.Certainty]; !ok {
-			errorStrings = append(errorStrings, "invalid alert.info.certainty")
+			errStrs = append(errStrs, "invalid alert.info.certainty")
 		}
 
 		if len(info.Effective) > 0 && !isValidTimeString(info.Effective) {
-			errorStrings = append(errorStrings, "invalid alert.info.effective time")
+			errStrs = append(errStrs, "invalid alert.info.effective time")
 		}
 
 		if len(info.Onset) > 0 && !isValidTimeString(info.Onset) {
-			errorStrings = append(errorStrings, "invalid alert.info.onset time")
+			errStrs = append(errStrs, "invalid alert.info.onset time")
 		}
 
 		if len(info.Expires) > 0 && !isValidTimeString(info.Expires) {
-			errorStrings = append(errorStrings, "invalid alert.info.expires time")
+			errStrs = append(errStrs, "invalid alert.info.expires time")
 		}
 
 		if len(info.Web) > 0 && !isValidURLString(info.Web) {
-			errorStrings = append(errorStrings, "invalid alert.info.web URL")
+			errStrs = append(errStrs, "invalid alert.info.web URL")
 		}
 
 		for j, resource := range info.Resources {
@@ -534,15 +547,15 @@ func (a *alert) validate() error {
 			}
 
 			if size, err := strconv.Atoi(resource.Size); err != nil || size < 0 {
-				errorStrings = append(errorStrings, "invalid alert.info.resource.size")
+				errStrs = append(errStrs, "invalid alert.info.resource.size")
 			}
 
 			if len(resource.URI) > 0 && !isValidURLString(resource.URI) {
-				errorStrings = append(errorStrings, "invalid alert.info.resource.uri URL")
+				errStrs = append(errStrs, "invalid alert.info.resource.uri URL")
 			}
 
 			if !(len(resource.URI) > 0 || len(resource.DerefURI) > 0) {
-				errorStrings = append(errorStrings, "invalid alert.info.resource.uri URL")
+				errStrs = append(errStrs, "invalid alert.info.resource.uri URL")
 			}
 		}
 
@@ -552,140 +565,142 @@ func (a *alert) validate() error {
 			}
 			for _, p := range area.Polygons {
 				if !isValidPolygonString(p) {
-					errorStrings = append(errorStrings, fmt.Sprintf("invalid alert.info[%d].area[%d].polygon[%d]", i, j, p))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].polygon[%d]", i, j, p))
 				}
 			}
 			for _, c := range area.Circles {
 				if !isValidCircleString(c) {
-					errorStrings = append(errorStrings, fmt.Sprintf("invalid alert.info[%d].area[%d].circle[%d]", i, j, c))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].circle[%d]", i, j, c))
 				}
 			}
 		}
 	}
 
 	if len(missingElements) > 0 {
-		errorStrings = append(errorStrings, fmt.Sprintf("missing elements ", strings.Join(missingElements, ", ")))
+		errStrs = append(errStrs, fmt.Sprintf("missing elements ", strings.Join(missingElements, ", ")))
 	}
-	if len(errorStrings) > 0 {
-		return errors.New(strings.Join(errorStrings, "; "))
+	if len(errStrs) > 0 {
+		return errors.New(strings.Join(errStrs, "; "))
 	}
 
 	return nil
 }
 
+// convert converts an unexported `alert` to an exported `Alert`
 func (a *alert) convert() (*Alert, error) {
-	var r Alert // the Alert to be returned
+	var ret Alert // the Alert to be returned
 	var err error
 
-	r.Identifier = a.Identifier
-	r.Sender = a.Sender
-	if r.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
+	ret.Identifier = a.Identifier
+	ret.Sender = a.Sender
+	if ret.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
 		return nil, err
 	}
-	r.Status = a.Status
-	r.MsgType = a.MsgType
-	r.Source = a.Source
-	r.Scope = a.Scope
-	r.Restriction = a.Restriction
-	r.Addresses = parseAddressesString(a.Addresses)
-	r.Codes = a.Codes
-	r.Note = a.Note
-	if r.References, err = parseReferencesString(a.References); err != nil {
+	ret.Status = a.Status
+	ret.MsgType = a.MsgType
+	ret.Source = a.Source
+	ret.Scope = a.Scope
+	ret.Restriction = a.Restriction
+	ret.Addresses = parseAddressesString(a.Addresses)
+	ret.Codes = a.Codes
+	ret.Note = a.Note
+	if ret.References, err = parseReferencesString(a.References); err != nil {
 		return nil, err
 	}
-	r.Incidents = parseIncidentsString(a.Incidents)
+	ret.Incidents = parseIncidentsString(a.Incidents)
 
 	for _, aInfo := range a.Infos {
-		var rInfo Info
+		var retInfo Info
 
+		// en-US is assumed in no Language is defined
 		if len(aInfo.Language) == 0 {
-			rInfo.Language = "en-US"
+			retInfo.Language = "en-US"
 		} else {
-			rInfo.Language = aInfo.Language
+			retInfo.Language = aInfo.Language
 		}
-		rInfo.Categories = aInfo.Categories
-		rInfo.Event = aInfo.Event
-		rInfo.ResponseTypes = aInfo.ResponseTypes
-		rInfo.Urgency = aInfo.Urgency
-		rInfo.Severity = aInfo.Severity
-		rInfo.Certainty = aInfo.Certainty
-		rInfo.Audience = aInfo.Audience
+		retInfo.Categories = aInfo.Categories
+		retInfo.Event = aInfo.Event
+		retInfo.ResponseTypes = aInfo.ResponseTypes
+		retInfo.Urgency = aInfo.Urgency
+		retInfo.Severity = aInfo.Severity
+		retInfo.Certainty = aInfo.Certainty
+		retInfo.Audience = aInfo.Audience
 		for _, ec := range aInfo.EventCodes {
-			rInfo.EventCodes = append(rInfo.EventCodes, &NamedValue{ValueName: ec.ValueName, Value: ec.Value})
+			retInfo.EventCodes = append(retInfo.EventCodes, &NamedValue{ValueName: ec.ValueName, Value: ec.Value})
 		}
-		if rInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
+		if retInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
 			return nil, err
 		}
-		if rInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
+		if retInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
 			return nil, err
 		}
-		if rInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
+		if retInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
 			return nil, err
 		}
-		rInfo.SenderName = aInfo.SenderName
-		rInfo.Headline = aInfo.Headline
-		rInfo.Description = aInfo.Description
-		rInfo.Instruction = aInfo.Instruction
-		if rInfo.Web, err = url.Parse(aInfo.Web); err != nil {
+		retInfo.SenderName = aInfo.SenderName
+		retInfo.Headline = aInfo.Headline
+		retInfo.Description = aInfo.Description
+		retInfo.Instruction = aInfo.Instruction
+		if retInfo.Web, err = url.Parse(aInfo.Web); err != nil {
 			return nil, err
 		}
-		rInfo.Contact = aInfo.Contact
+		retInfo.Contact = aInfo.Contact
 		for _, p := range aInfo.Parameters {
-			rInfo.Parameters = append(rInfo.Parameters, &NamedValue{ValueName: p.ValueName, Value: p.Value})
+			retInfo.Parameters = append(retInfo.Parameters, &NamedValue{ValueName: p.ValueName, Value: p.Value})
 		}
 
 		for _, aiResource := range aInfo.Resources {
-			var rResource Resource
+			var retResource Resource
 
-			rResource.ResourceDesc = aiResource.ResourceDesc
-			rResource.MIMEType = aiResource.MIMEType
-			if rResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
+			retResource.ResourceDesc = aiResource.ResourceDesc
+			retResource.MIMEType = aiResource.MIMEType
+			if retResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
 				return nil, err
 			}
-			if rResource.URI, err = url.Parse(aiResource.URI); err != nil {
+			if retResource.URI, err = url.Parse(aiResource.URI); err != nil {
 				return nil, err
 			}
-			rResource.DerefURI = aiResource.Digest
-			rResource.Digest = aiResource.Digest
+			retResource.DerefURI = aiResource.Digest
+			retResource.Digest = aiResource.Digest
 
-			rInfo.Resources = append(rInfo.Resources, &rResource)
+			retInfo.Resources = append(retInfo.Resources, &retResource)
 		}
 
 		for _, aiArea := range aInfo.Areas {
-			var rArea Area
+			var retArea Area
 
-			rArea.AreaDesc = aiArea.AreaDesc
+			retArea.AreaDesc = aiArea.AreaDesc
 			for _, p := range aiArea.Polygons {
 				if parsed, err := parsePolygonString(p); err != nil {
 					return nil, err
 				} else {
-					rArea.Polygons = append(rArea.Polygons, parsed)
+					retArea.Polygons = append(retArea.Polygons, parsed)
 				}
 			}
 			for _, c := range aiArea.Circles {
 				if parsed, err := parseCircleString(c); err != nil {
 					return nil, err
 				} else {
-					rArea.Circles = append(rArea.Circles, parsed)
+					retArea.Circles = append(retArea.Circles, parsed)
 				}
 			}
 			for _, g := range aiArea.Geocodes {
-				rArea.Geocodes = append(rArea.Geocodes, &NamedValue{ValueName: g.ValueName, Value: g.Value})
+				retArea.Geocodes = append(retArea.Geocodes, &NamedValue{ValueName: g.ValueName, Value: g.Value})
 			}
-			rArea.Altitude = aiArea.Altitude
-			rArea.Ceiling = aiArea.Ceiling
+			retArea.Altitude = aiArea.Altitude
+			retArea.Ceiling = aiArea.Ceiling
 
-			rInfo.Areas = append(rInfo.Areas, &rArea)
+			retInfo.Areas = append(retInfo.Areas, &retArea)
 		}
 
-		r.Infos = append(r.Infos, &rInfo)
+		ret.Infos = append(ret.Infos, &retInfo)
 	}
 
-	return &r, nil
+	return &ret, nil
 }
 
 // ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
-func ProcessAlertMsg(alertMsgXML []byte) (*Alert, error) {
+func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
 	raw := &alert{}
 	if err := xml.Unmarshal(alertMsgXML, raw); err != nil {
 		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
@@ -693,10 +708,10 @@ func ProcessAlertMsg(alertMsgXML []byte) (*Alert, error) {
 	if err := raw.validate(); err != nil {
 		return nil, fmt.Errorf("error(s) validating alert: %s", err)
 	}
-	processedAlert, err := raw.convert()
+	processed, err := raw.convert()
 	if err != nil {
 		return nil, fmt.Errorf("error(s) converting alert: %s", err)
 	}
 
-	return processedAlert, nil
+	return processed, nil
 }
