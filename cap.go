@@ -88,6 +88,186 @@ var (
 	}
 )
 
+// Alert represents a parsed and validated CAP alert
+type Alert struct {
+	// TODO: add namespace support to distiguish CAP versions
+	// CAPVersion  string
+	Identifier  string
+	Sender      string
+	Sent        time.Time
+	Status      string
+	MsgType     string
+	Source      string
+	Scope       string
+	Restriction string
+	Addresses   []string
+	Codes       []string
+	Note        string
+	References  []*Reference
+	Incidents   []string
+	Infos       []*Info
+}
+
+type Info struct {
+	Language      string
+	Categories    []string
+	Event         string
+	ResponseTypes []string
+	Urgency       string
+	Severity      string
+	Certainty     string
+	Audience      string
+	EventCodes    []*NamedValue
+	Effective     time.Time
+	Onset         time.Time
+	Expires       time.Time
+	SenderName    string
+	Headline      string
+	Description   string
+	Instruction   string
+	Web           *url.URL
+	Contact       string
+	Parameters    []*NamedValue
+	Resources     []*Resource
+	Areas         []*Area
+}
+
+type Resource struct {
+	ResourceDesc string
+	MIMEType     string
+	Size         int // approximate size in bytes
+	URI          *url.URL
+	DerefURI     string // base-64 encoded binary
+	Digest       string // SHA-1 hash
+}
+
+type Area struct {
+	AreaDesc string
+	// Polygon is already a reference type, but we want a pointer here for
+	// consistency with []*Cricle
+	Polygons []*Polygon
+	Circles  []*Circle
+	Geocodes []*NamedValue
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	Altitude string // feet above mean sea level
+	Ceiling  string // feet above mean sea level
+}
+
+// NamedValue
+type NamedValue struct {
+	ValueName string
+	Value     string
+}
+
+// Reference
+type Reference struct {
+	Sender     string
+	Identifier string
+	Sent       time.Time
+}
+
+// parseReferencesString
+func parseReferencesString(referencesString string) ([]*Reference, error) {
+	refStrings := strings.Fields(referencesString)
+	var refs []*Reference
+	for _, s := range refStrings {
+		parts := strings.Split(s, ",")
+		if len(parts) != 3 {
+			return nil, errors.New("reference must contain three parts")
+		}
+		t, err := time.Parse(timeFormat, parts[2])
+		if err != nil {
+			return nil, errors.New("invalid time string")
+		}
+		refs = append(refs, &Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
+	}
+	return refs, nil
+}
+
+func isValidReferencesString(referenceString string) bool {
+	if _, err := parseReferencesString(referenceString); err != nil {
+		return false
+	}
+	return true
+}
+
+// Point represents a WGS 84 coordinate point on the earth
+type Point struct {
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	Latitude  string
+	Longitude string
+}
+
+// Polygon
+type Polygon []Point
+
+// parsePolygon parses a polygon string
+func parsePolygonString(polygonString string) (*Polygon, error) {
+	// 38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89 38.47,-120.14
+	// TODO: test validity of numbers
+	pointStrings := strings.Fields(polygonString)
+	if len(pointStrings) < 4 {
+		return nil, errors.New("a polygon must contain al least four points")
+	}
+	var polygon Polygon
+	for _, ps := range pointStrings {
+		vals := strings.Split(ps, ",")
+		if len(vals) != 2 {
+			return nil, errors.New("point must contain exactly two values")
+		}
+		polygon = append(polygon, Point{Latitude: vals[0], Longitude: vals[1]})
+
+	}
+	if polygon[0] != polygon[len(polygon)-1] {
+		return nil, errors.New("first and last points must be equal")
+	}
+	return &polygon, nil
+}
+
+// isValidPolygon tests whether a polygon string is valid
+func isValidPolygonString(polygonString string) bool {
+	if _, err := parsePolygonString(polygonString); err != nil {
+		return false
+	}
+	return true
+}
+
+// Circle
+type Circle struct {
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	// The coordinate system used is WGS 84.
+	Point  Point
+	Radius string // kilometers
+}
+
+// parseCircleString
+func parseCircleString(circleString string) (*Circle, error) {
+	// 32.9525,-115.5527 0
+	// TODO: test validity of numbers
+	pointRadiusStrings := strings.Fields(circleString)
+	if len(pointRadiusStrings) != 2 {
+		return nil, errors.New("a circle must contain a central point and a radius")
+	}
+	pointStrings := strings.Split(pointRadiusStrings[0], ",")
+	if len(pointStrings) != 2 {
+		return nil, errors.New("central point must contain exactly two values")
+	}
+	radiusString := pointRadiusStrings[1]
+	circle := Circle{Point: Point{Latitude: pointStrings[0], Longitude: pointStrings[1]}, Radius: radiusString}
+	return &circle, nil
+}
+
+// isValidCircle tests whether a circle string is valid
+func isValidCircleString(circleString string) bool {
+	if _, err := parseCircleString(circleString); err != nil {
+		return false
+	}
+	return true
+}
+
 // alert is an unexported struct used to unmarshal a CAP alert message into
 type alert struct {
 	// TODO: need to add namespace support to distiguish CAP versions
@@ -104,7 +284,7 @@ type alert struct {
 	Note        string   `xml:"note"`
 	References  string   `xml:"references"`
 	Incidents   string   `xml:"incidents"`
-	Info        []struct {
+	Infos       []struct {
 		Language      string   `xml:"language"`
 		Categories    []string `xml:"category"`
 		Event         string   `xml:"event"`
@@ -152,76 +332,6 @@ type alert struct {
 	} `xml:"info"`
 }
 
-type NamedValue struct {
-	ValueName string
-	Value     string
-}
-
-type Resource struct {
-	ResourceDesc string
-	MIMEType     string
-	Size         int // approximate size in bytes
-	URI          *url.URL
-	DerefURI     string // base-64 encoded binary
-	Digest       string // SHA-1 hash
-}
-
-type Area struct {
-	AreaDesc string
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
-	// The coordinate system used is WGS 84.
-	Polygons []Polygon
-	Circles  []Circle
-	Geocodes []NamedValue
-	Altitude string // decimal feet above mean sea level
-	Ceiling  string // decimal feet above mean sea level
-}
-
-type Info struct {
-	Language      string
-	Categories    []string
-	Event         string
-	ResponseTypes []string
-	Urgency       string
-	Severity      string
-	Certainty     string
-	Audience      string
-	EventCodes    []NamedValue
-	Effective     time.Time
-	Onset         time.Time
-	Expires       time.Time
-	SenderName    string
-	Headline      string
-	Description   string
-	Instruction   string
-	Web           *url.URL
-	Contact       string
-	Parameters    []NamedValue
-	Resources     []Resource
-	Areas         []Area
-}
-
-// Alert represents a parsed and validated CAP alert
-type Alert struct {
-	// TODO: add namespace support to distiguish CAP versions
-	// CAPVersion  string
-	Identifier  string
-	Sender      string
-	Sent        time.Time
-	Status      string
-	MsgType     string
-	Source      string
-	Scope       string
-	Restriction string
-	Addresses   []string
-	Codes       []string
-	Note        string
-	References  []Reference
-	Incidents   []string
-	Info        []Info
-}
-
 // isValidTimeString tests whether a time string is valid
 func isValidTimeString(timeString string) bool {
 	// not returning the error might be improper here, but I like that this
@@ -242,103 +352,23 @@ func isValidURLString(urlString string) bool {
 	return true
 }
 
-// Point represents a WGS 84 coordinate point on the earth
-type Point struct {
-	Latitude  string
-	Longitude string
+func parseAddressesString(addressesString string) []string {
+	return splitSpaceDelimitedQuotedStrings(addressesString)
 }
 
-// Polygon
-type Polygon []Point
-
-// parsePolygon parses a polygon string
-func parsePolygonString(polygonString string) (Polygon, error) {
-	// 38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89 38.47,-120.14
-	// TODO: test validity of numbers
-	pointStrings := strings.Fields(polygonString)
-	if len(pointStrings) < 4 {
-		return nil, errors.New("a polygon must contain al least four points")
-	}
-	var polygon Polygon
-	for _, ps := range pointStrings {
-		vals := strings.Split(ps, ",")
-		if len(vals) != 2 {
-			return nil, errors.New("point must contain exactly two values")
-		}
-		polygon = append(polygon, Point{Latitude: vals[0], Longitude: vals[1]})
-
-	}
-	if polygon[0] != polygon[len(polygon)-1] {
-		return nil, errors.New("first and last points must be equal")
-	}
-	return polygon, nil
-}
-
-// isValidPolygon tests whether a polygon string is valid
-func isValidPolygonString(polygonString string) bool {
-	if _, err := parsePolygonString(polygonString); err != nil {
+func isValidAddressesString(addressesString string) bool {
+	if parseAddressesString(addressesString) == nil {
 		return false
 	}
 	return true
 }
 
-// Circle
-type Circle struct {
-	Point  Point
-	Radius string
+func parseIncidentsString(indidentsString string) []string {
+	return splitSpaceDelimitedQuotedStrings(indidentsString)
 }
 
-// parseCircleString
-func parseCircleString(circleString string) (Circle, error) {
-	// 32.9525,-115.5527 0
-	// TODO: test validity of numbers
-	pointRadiusStrings := strings.Fields(circleString)
-	if len(pointRadiusStrings) != 2 {
-		return Circle{}, errors.New("a circle must contain a central point and a radius")
-	}
-	pointStrings := strings.Split(pointRadiusStrings[0], ",")
-	if len(pointStrings) != 2 {
-		return Circle{}, errors.New("central point must contain exactly two values")
-	}
-	radiusString := pointRadiusStrings[1]
-	circle := Circle{Point: Point{Latitude: pointStrings[0], Longitude: pointStrings[1]}, Radius: radiusString}
-	return circle, nil
-}
-
-// isValidCircle tests whether a circle string is valid
-func isValidCircleString(circleString string) bool {
-	if _, err := parseCircleString(circleString); err != nil {
-		return false
-	}
-	return true
-}
-
-// Reference
-type Reference struct {
-	Sender     string
-	Identifier string
-	Sent       time.Time
-}
-
-func parseReferencesString(referencesString string) ([]Reference, error) {
-	refStrings := strings.Fields(referencesString)
-	var refs []Reference
-	for _, s := range refStrings {
-		parts := strings.Split(s, ",")
-		if len(parts) != 3 {
-			return nil, errors.New("reference must contain three parts")
-		}
-		t, err := time.Parse(timeFormat, parts[2])
-		if err != nil {
-			return nil, errors.New("invalid time string")
-		}
-		refs = append(refs, Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
-	}
-	return refs, nil
-}
-
-func isValidReferencesString(referenceString string) bool {
-	if _, err := parseCircleString(referenceString); err != nil {
+func isValidIncidentsString(incidentsString string) bool {
+	if parseIncidentsString(incidentsString) == nil {
 		return false
 	}
 	return true
@@ -349,7 +379,7 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []stri
 	// sections
 	var fields []string
 	if len(spaceDelimitedQuotedStrings) == 0 {
-		return fields
+		return nil
 	}
 	words := strings.SplitAfter(spaceDelimitedQuotedStrings, " ")
 	var currField string
@@ -373,14 +403,6 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []stri
 		}
 	}
 	return fields
-}
-
-func parseAddressesString(addressesString string) []string {
-	return splitSpaceDelimitedQuotedStrings(addressesString)
-}
-
-func parseIncidentsString(indidentsString string) []string {
-	return splitSpaceDelimitedQuotedStrings(indidentsString)
 }
 
 func (a *alert) validate() error {
@@ -430,7 +452,9 @@ func (a *alert) validate() error {
 	}
 
 	if len(a.Addresses) > 0 {
-		// "" and whitespace
+		if !isValidAddressesString(a.Addresses) {
+			errorStrings = append(errorStrings, "invalid alert.addresses")
+		}
 	}
 
 	if len(a.References) > 0 {
@@ -440,10 +464,12 @@ func (a *alert) validate() error {
 	}
 
 	if len(a.Incidents) > 0 {
-		// "" and whitespace
+		if !isValidIncidentsString(a.Incidents) {
+			errorStrings = append(errorStrings, "invalid alert.incidents")
+		}
 	}
 
-	for i, info := range a.Info {
+	for i, info := range a.Infos {
 		if len(info.Categories) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].category", i))
 		} else {
@@ -569,7 +595,7 @@ func (a *alert) convert() (*Alert, error) {
 	}
 	r.Incidents = parseIncidentsString(a.Incidents)
 
-	for _, aInfo := range a.Info {
+	for _, aInfo := range a.Infos {
 		var rInfo Info
 
 		if len(aInfo.Language) == 0 {
@@ -585,7 +611,7 @@ func (a *alert) convert() (*Alert, error) {
 		rInfo.Certainty = aInfo.Certainty
 		rInfo.Audience = aInfo.Audience
 		for _, ec := range aInfo.EventCodes {
-			rInfo.EventCodes = append(rInfo.EventCodes, NamedValue{ValueName: ec.ValueName, Value: ec.Value})
+			rInfo.EventCodes = append(rInfo.EventCodes, &NamedValue{ValueName: ec.ValueName, Value: ec.Value})
 		}
 		if rInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
 			return nil, err
@@ -605,7 +631,7 @@ func (a *alert) convert() (*Alert, error) {
 		}
 		rInfo.Contact = aInfo.Contact
 		for _, p := range aInfo.Parameters {
-			rInfo.Parameters = append(rInfo.Parameters, NamedValue{ValueName: p.ValueName, Value: p.Value})
+			rInfo.Parameters = append(rInfo.Parameters, &NamedValue{ValueName: p.ValueName, Value: p.Value})
 		}
 
 		for _, aiResource := range aInfo.Resources {
@@ -622,7 +648,7 @@ func (a *alert) convert() (*Alert, error) {
 			rResource.DerefURI = aiResource.Digest
 			rResource.Digest = aiResource.Digest
 
-			rInfo.Resources = append(rInfo.Resources, rResource)
+			rInfo.Resources = append(rInfo.Resources, &rResource)
 		}
 
 		for _, aiArea := range aInfo.Areas {
@@ -644,24 +670,24 @@ func (a *alert) convert() (*Alert, error) {
 				}
 			}
 			for _, g := range aiArea.Geocodes {
-				rArea.Geocodes = append(rArea.Geocodes, NamedValue{ValueName: g.ValueName, Value: g.Value})
+				rArea.Geocodes = append(rArea.Geocodes, &NamedValue{ValueName: g.ValueName, Value: g.Value})
 			}
 			rArea.Altitude = aiArea.Altitude
 			rArea.Ceiling = aiArea.Ceiling
 
-			rInfo.Areas = append(rInfo.Areas, rArea)
+			rInfo.Areas = append(rInfo.Areas, &rArea)
 		}
 
-		r.Info = append(r.Info, rInfo)
+		r.Infos = append(r.Infos, &rInfo)
 	}
 
 	return &r, nil
 }
 
-// ProcessAlertMessageXML takes an XML CAP alert message and returns an Alert struct
-func ProcessAlertMessage(alertMessageXML []byte) (*Alert, error) {
+// ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
+func ProcessAlertMsg(alertMsgXML []byte) (*Alert, error) {
 	raw := &alert{}
-	if err := xml.Unmarshal(alertMessageXML, raw); err != nil {
+	if err := xml.Unmarshal(alertMsgXML, raw); err != nil {
 		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
 	}
 	if err := raw.validate(); err != nil {
