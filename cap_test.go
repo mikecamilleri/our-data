@@ -1,6 +1,7 @@
 package cap
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 const (
 	// CAP Alert Message Examples from specification
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
 	HomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>43b080713727</identifier> 
@@ -190,6 +192,7 @@ const (
    </info>
 </alert>`
 
+	// constants for unit tests
 	ReferencesStringValid       = `user@example.com,XX1122333,2017-01-01T10:43:00-08:00 user2@example.com,2XX1122333,2017-01-01T10:43:00-08:00`
 	ReferencesStringMissingPart = `user@example.com,2016-01-01T10:43:00-08:00`
 	ReferencesStringBadTime     = `user@example.com,XX1122333,2016-01-01T10:43:00`
@@ -390,4 +393,26 @@ func TestIsValidURLString(t *testing.T) {
 	assert.True(isValidURLString(URLStringFullValid))
 	assert.True(isValidURLString(URLStringRelativeValid))
 	assert.False(isValidURLString(URLStringInvalid))
+}
+
+func TestProcessAlertMessageXML(t *testing.T) {
+	assert := assert.New(t)
+	var alert *Alert
+	var err error
+
+	alert, err = ProcessAlertMsgXML([]byte(HomelandSecurityAdvisorySystemAlert))
+	fmt.Println(alert)
+	assert.Nil(err)
+
+	alert, err = ProcessAlertMsgXML([]byte(SevereThunderstormWarning))
+	fmt.Println(alert)
+	assert.Nil(err)
+
+	alert, err = ProcessAlertMsgXML([]byte(EarthquakeReportUpdateMessage))
+	fmt.Println(alert)
+	assert.Nil(err)
+
+	alert, err = ProcessAlertMsgXML([]byte(AmberAlertMultilingualMessage))
+	fmt.Println(alert)
+	assert.Nil(err)
 }

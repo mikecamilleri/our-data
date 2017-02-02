@@ -362,7 +362,7 @@ func isValidURLString(urlString string) bool {
 // message XML into
 type alert struct {
 	// TODO: need to add namespace support to distiguish CAP versions
-	Identifier  string   `xml:"indentifier"`
+	Identifier  string   `xml:"identifier"`
 	Sender      string   `xml:"sender"`
 	Sent        string   `xml:"sent"`
 	Status      string   `xml:"status"`
@@ -554,8 +554,10 @@ func (a *alert) validate() error {
 				missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].resource[%d].mimeType", i, j))
 			}
 
-			if size, err := strconv.Atoi(resource.Size); err != nil || size < 0 {
-				errStrs = append(errStrs, "invalid alert.info.resource.size")
+			if len(resource.Size) > 0 {
+				if size, err := strconv.Atoi(resource.Size); err != nil || size < 0 {
+					errStrs = append(errStrs, "invalid alert.info.resource.size")
+				}
 			}
 
 			if len(resource.URI) > 0 && !isValidURLString(resource.URI) {
@@ -601,8 +603,10 @@ func (a *alert) convert() (*Alert, error) {
 
 	ret.Identifier = a.Identifier
 	ret.Sender = a.Sender
-	if ret.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
-		return nil, err
+	if len(a.Sent) > 0 {
+		if ret.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
+			return nil, err
+		}
 	}
 	ret.Status = a.Status
 	ret.MsgType = a.MsgType
@@ -642,21 +646,29 @@ func (a *alert) convert() (*Alert, error) {
 		for _, ec := range aInfo.EventCodes {
 			retInfo.EventCodes = append(retInfo.EventCodes, &NamedValue{ValueName: ec.ValueName, Value: ec.Value})
 		}
-		if retInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
-			return nil, err
+		if len(aInfo.Effective) > 0 {
+			if retInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
+				return nil, err
+			}
 		}
-		if retInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
-			return nil, err
+		if len(aInfo.Onset) > 0 {
+			if retInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
+				return nil, err
+			}
 		}
-		if retInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
-			return nil, err
+		if len(aInfo.Expires) > 0 {
+			if retInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
+				return nil, err
+			}
 		}
 		retInfo.SenderName = aInfo.SenderName
 		retInfo.Headline = aInfo.Headline
 		retInfo.Description = aInfo.Description
 		retInfo.Instruction = aInfo.Instruction
-		if retInfo.Web, err = url.Parse(aInfo.Web); err != nil {
-			return nil, err
+		if len(aInfo.Web) > 0 {
+			if retInfo.Web, err = url.Parse(aInfo.Web); err != nil {
+				return nil, err
+			}
 		}
 		retInfo.Contact = aInfo.Contact
 		for _, p := range aInfo.Parameters {
@@ -668,11 +680,15 @@ func (a *alert) convert() (*Alert, error) {
 
 			retResource.ResourceDesc = aiResource.ResourceDesc
 			retResource.MIMEType = aiResource.MIMEType
-			if retResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
-				return nil, err
+			if len(aiResource.Size) > 0 {
+				if retResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
+					return nil, err
+				}
 			}
-			if retResource.URI, err = url.Parse(aiResource.URI); err != nil {
-				return nil, err
+			if len(aiResource.URI) > 0 {
+				if retResource.URI, err = url.Parse(aiResource.URI); err != nil {
+					return nil, err
+				}
 			}
 			retResource.DerefURI = aiResource.Digest
 			retResource.Digest = aiResource.Digest
