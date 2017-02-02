@@ -152,8 +152,8 @@ type Area struct {
 	AreaDesc string
 	// Polygon is already a reference type, but we want a pointer here for
 	// consistency with []*Cricle
-	Polygons []*Polygon
-	Circles  []*Circle
+	Polygons []Polygon
+	Circles  []Circle
 	Geocodes []*NamedValue
 	// because golang has no built in support for decimals, these values
 	// are being left as `string` so the caller can handle as necessary.
@@ -176,6 +176,9 @@ type Reference struct {
 
 // parseReferencesString parses a references string
 func parseReferencesString(referencesString string) ([]*Reference, error) {
+	if len(referencesString) == 0 {
+		return nil, errors.New("referencesString is empty")
+	}
 	refStrings := strings.Fields(referencesString)
 	var refs []*Reference
 	for _, rs := range refStrings {
@@ -212,25 +215,24 @@ type Point struct {
 type Polygon []Point
 
 // parsePolygonString parses a polygon string
-func parsePolygonString(polygonString string) (*Polygon, error) {
-	// 38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89 38.47,-120.14
+func parsePolygonString(polygonString string) (Polygon, error) {
 	// TODO: test validity of numbers
 	pointStrings := strings.Fields(polygonString)
 	if len(pointStrings) < 4 {
 		return nil, errors.New("a polygon must contain al least four points")
 	}
-	var polygon Polygon
+	var poly Polygon
 	for _, ps := range pointStrings {
 		vals := strings.Split(ps, ",")
 		if len(vals) != 2 {
 			return nil, errors.New("point must contain exactly two values")
 		}
-		polygon = append(polygon, Point{Latitude: vals[0], Longitude: vals[1]})
+		poly = append(poly, Point{Latitude: vals[0], Longitude: vals[1]})
 	}
-	if polygon[0] != polygon[len(polygon)-1] {
+	if poly[0] != poly[len(poly)-1] {
 		return nil, errors.New("first and last points must be equal")
 	}
-	return &polygon, nil
+	return poly, nil
 }
 
 // isValidPolygonString tests whether a polygon string is valid
@@ -251,41 +253,25 @@ type Circle struct {
 }
 
 // parseCircleString
-func parseCircleString(circleString string) (*Circle, error) {
-	// 32.9525,-115.5527 0
+func parseCircleString(circleString string) (Circle, error) {
 	// TODO: test validity of numbers
+	var circle Circle
 	pointRadiusStrings := strings.Fields(circleString)
 	if len(pointRadiusStrings) != 2 {
-		return nil, errors.New("a circle must contain a central point and a radius")
+		return circle, errors.New("a circle must contain a central point and a radius")
 	}
 	psVals := strings.Split(pointRadiusStrings[0], ",")
 	if len(psVals) != 2 {
-		return nil, errors.New("central point must contain exactly two values")
+		return circle, errors.New("central point must contain exactly two values")
 	}
-	rsVal := pointRadiusStrings[1]
-	circle := Circle{Point: Point{Latitude: psVals[0], Longitude: psVals[1]}, Radius: rsVal}
-	return &circle, nil
+	circle.Point = Point{Latitude: psVals[0], Longitude: psVals[1]}
+	circle.Radius = pointRadiusStrings[1]
+	return circle, nil
 }
 
 // isValidCircleString tests whether a circle string is valid
 func isValidCircleString(circleString string) bool {
 	if _, err := parseCircleString(circleString); err != nil {
-		return false
-	}
-	return true
-}
-
-// isValidTimeString tests whether a time string is valid
-func isValidTimeString(timeString string) bool {
-	if _, err := time.Parse(timeFormat, timeString); err != nil {
-		return false
-	}
-	return true
-}
-
-// isValidURLString tests whether a URL string is valid
-func isValidURLString(urlString string) bool {
-	if _, err := url.Parse(urlString); err != nil {
 		return false
 	}
 	return true
@@ -298,7 +284,7 @@ func parseAddressesString(addressesString string) []string {
 
 // isValidAddressesString tests whether an addresses string is valid
 func isValidAddressesString(addressesString string) bool {
-	if parseAddressesString(addressesString) == nil {
+	if len(parseAddressesString(addressesString)) == 0 {
 		return false
 	}
 	return true
@@ -311,7 +297,7 @@ func parseIncidentsString(indidentsString string) []string {
 
 // isValidIncidentsString tests whether an incidentas string is valid
 func isValidIncidentsString(incidentsString string) bool {
-	if parseIncidentsString(incidentsString) == nil {
+	if len(parseIncidentsString(incidentsString)) == 0 {
 		return false
 	}
 	return true
@@ -341,13 +327,35 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []stri
 			trimmed := strings.TrimSuffix(word, `" `)
 			currField += trimmed
 			fields = append(fields, currField)
-			currField = ""
+			currField = "" // triggers start of new field on next iteration
+		} else if strings.HasSuffix(word, `"`) {
+			// last word of quoted section and string
+			trimmed := strings.TrimSuffix(word, `"`)
+			currField += trimmed
+			fields = append(fields, currField)
+			currField = "" // triggers start of new field on next iteration
 		} else {
 			// intermediate word of quoted section
 			currField += word
 		}
 	}
 	return fields
+}
+
+// isValidTimeString tests whether a time string is valid
+func isValidTimeString(timeString string) bool {
+	if _, err := time.Parse(timeFormat, timeString); err != nil {
+		return false
+	}
+	return true
+}
+
+// isValidURLString tests whether a URL string is valid
+func isValidURLString(urlString string) bool {
+	if _, err := url.Parse(urlString); err != nil {
+		return false
+	}
+	return true
 }
 
 // alert is an unexported struct used internally to unmarshal a CAP alert
@@ -601,18 +609,24 @@ func (a *alert) convert() (*Alert, error) {
 	ret.Source = a.Source
 	ret.Scope = a.Scope
 	ret.Restriction = a.Restriction
-	ret.Addresses = parseAddressesString(a.Addresses)
+	if len(a.Addresses) > 0 {
+		ret.Addresses = parseAddressesString(a.Addresses)
+	}
 	ret.Codes = a.Codes
 	ret.Note = a.Note
-	if ret.References, err = parseReferencesString(a.References); err != nil {
-		return nil, err
+	if len(a.References) > 0 {
+		if ret.References, err = parseReferencesString(a.References); err != nil {
+			return nil, err
+		}
 	}
-	ret.Incidents = parseIncidentsString(a.Incidents)
+	if len(a.Incidents) > 0 {
+		ret.Incidents = parseIncidentsString(a.Incidents)
+	}
 
 	for _, aInfo := range a.Infos {
 		var retInfo Info
 
-		// en-US is assumed in no Language is defined
+		// en-US is assumed if no Language is defined
 		if len(aInfo.Language) == 0 {
 			retInfo.Language = "en-US"
 		} else {
