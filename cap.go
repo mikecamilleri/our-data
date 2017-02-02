@@ -107,9 +107,9 @@ type Alert struct {
 	Addresses   []string
 	Codes       []string
 	Note        string
-	References  []*Reference
+	References  []Reference
 	Incidents   []string
-	Infos       []*Info
+	Infos       []Info
 }
 
 // Info
@@ -122,7 +122,7 @@ type Info struct {
 	Severity      string
 	Certainty     string
 	Audience      string
-	EventCodes    []*NamedValue
+	EventCodes    []NamedValue
 	Effective     time.Time
 	Onset         time.Time
 	Expires       time.Time
@@ -132,9 +132,9 @@ type Info struct {
 	Instruction   string
 	Web           *url.URL
 	Contact       string
-	Parameters    []*NamedValue
-	Resources     []*Resource
-	Areas         []*Area
+	Parameters    []NamedValue
+	Resources     []Resource
+	Areas         []Area
 }
 
 // Resource
@@ -154,7 +154,7 @@ type Area struct {
 	// consistency with []*Cricle
 	Polygons []Polygon
 	Circles  []Circle
-	Geocodes []*NamedValue
+	Geocodes []NamedValue
 	// because golang has no built in support for decimals, these values
 	// are being left as `string` so the caller can handle as necessary.
 	Altitude string // feet above mean sea level
@@ -175,12 +175,12 @@ type Reference struct {
 }
 
 // parseReferencesString parses a references string
-func parseReferencesString(referencesString string) ([]*Reference, error) {
+func parseReferencesString(referencesString string) ([]Reference, error) {
 	if len(referencesString) == 0 {
 		return nil, errors.New("referencesString is empty")
 	}
 	refStrings := strings.Fields(referencesString)
-	var refs []*Reference
+	var refs []Reference
 	for _, rs := range refStrings {
 		parts := strings.Split(rs, ",")
 		if len(parts) != 3 {
@@ -190,7 +190,7 @@ func parseReferencesString(referencesString string) ([]*Reference, error) {
 		if err != nil {
 			return nil, errors.New("invalid time string")
 		}
-		refs = append(refs, &Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
+		refs = append(refs, Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
 	}
 	return refs, nil
 }
@@ -644,7 +644,7 @@ func (a *alert) convert() (*Alert, error) {
 		retInfo.Certainty = aInfo.Certainty
 		retInfo.Audience = aInfo.Audience
 		for _, ec := range aInfo.EventCodes {
-			retInfo.EventCodes = append(retInfo.EventCodes, &NamedValue{ValueName: ec.ValueName, Value: ec.Value})
+			retInfo.EventCodes = append(retInfo.EventCodes, NamedValue{ValueName: ec.ValueName, Value: ec.Value})
 		}
 		if len(aInfo.Effective) > 0 {
 			if retInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
@@ -672,7 +672,7 @@ func (a *alert) convert() (*Alert, error) {
 		}
 		retInfo.Contact = aInfo.Contact
 		for _, p := range aInfo.Parameters {
-			retInfo.Parameters = append(retInfo.Parameters, &NamedValue{ValueName: p.ValueName, Value: p.Value})
+			retInfo.Parameters = append(retInfo.Parameters, NamedValue{ValueName: p.ValueName, Value: p.Value})
 		}
 
 		for _, aiResource := range aInfo.Resources {
@@ -693,7 +693,7 @@ func (a *alert) convert() (*Alert, error) {
 			retResource.DerefURI = aiResource.Digest
 			retResource.Digest = aiResource.Digest
 
-			retInfo.Resources = append(retInfo.Resources, &retResource)
+			retInfo.Resources = append(retInfo.Resources, retResource)
 		}
 
 		for _, aiArea := range aInfo.Areas {
@@ -715,15 +715,15 @@ func (a *alert) convert() (*Alert, error) {
 				}
 			}
 			for _, g := range aiArea.Geocodes {
-				retArea.Geocodes = append(retArea.Geocodes, &NamedValue{ValueName: g.ValueName, Value: g.Value})
+				retArea.Geocodes = append(retArea.Geocodes, NamedValue{ValueName: g.ValueName, Value: g.Value})
 			}
 			retArea.Altitude = aiArea.Altitude
 			retArea.Ceiling = aiArea.Ceiling
 
-			retInfo.Areas = append(retInfo.Areas, &retArea)
+			retInfo.Areas = append(retInfo.Areas, retArea)
 		}
 
-		ret.Infos = append(ret.Infos, &retInfo)
+		ret.Infos = append(ret.Infos, retInfo)
 	}
 
 	return &ret, nil

@@ -1,7 +1,6 @@
 package cap
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -230,7 +229,7 @@ const (
 
 func TestParseReferencesString(t *testing.T) {
 	assert := assert.New(t)
-	var refs []*Reference
+	var refs []Reference
 	var err error
 
 	refs, err = parseReferencesString(ReferencesStringValid)
@@ -397,22 +396,17 @@ func TestIsValidURLString(t *testing.T) {
 
 func TestProcessAlertMessageXML(t *testing.T) {
 	assert := assert.New(t)
-	var alert *Alert
 	var err error
 
-	alert, err = ProcessAlertMsgXML([]byte(HomelandSecurityAdvisorySystemAlert))
-	fmt.Println(alert)
+	_, err = ProcessAlertMsgXML([]byte(HomelandSecurityAdvisorySystemAlert))
 	assert.Nil(err)
 
-	alert, err = ProcessAlertMsgXML([]byte(SevereThunderstormWarning))
-	fmt.Println(alert)
+	_, err = ProcessAlertMsgXML([]byte(SevereThunderstormWarning))
 	assert.Nil(err)
 
-	alert, err = ProcessAlertMsgXML([]byte(EarthquakeReportUpdateMessage))
-	fmt.Println(alert)
+	_, err = ProcessAlertMsgXML([]byte(EarthquakeReportUpdateMessage))
 	assert.Nil(err)
 
-	alert, err = ProcessAlertMsgXML([]byte(AmberAlertMultilingualMessage))
-	fmt.Println(alert)
+	_, err = ProcessAlertMsgXML([]byte(AmberAlertMultilingualMessage))
 	assert.Nil(err)
 }
