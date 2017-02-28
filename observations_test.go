@@ -101,25 +101,7 @@ var (
 	}
 )
 
-func TestGetCurrentObservationXML(t *testing.T) {
-	httpmock.Activate()
-	defer httpmock.DeactivateAndReset()
-	httpmock.RegisterResponder("GET",
-		"http://w1.weather.gov/xml/current_obs/KFAK.xml",
-		httpmock.NewStringResponder(200, testObservation))
-
-	c := &http.Client{}
-	obs, err := getCurrentObservationXML(c, "KFAK")
-	require.Nil(t, err)
-	require.Equal(t, obs, []byte(testObservation))
-}
-
-func TestProcessObservationXML(t *testing.T) {
-	obs, err := processObservationXML([]byte(testObservation))
-	require.Nil(t, err)
-	require.Equal(t, *obs, parsedTestObservation)
-}
-
+// TestGetCurrentObservation also inherently tests newObservationFromXML
 func TestGetCurrentObservation(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()

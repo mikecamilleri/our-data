@@ -47,7 +47,7 @@ type Observation struct {
 	VisibilityMi     string `xml:"visibility_mi"`
 }
 
-// observation is a private struct use to export a single meteorological
+// observation is a private struct used to parse a single meteorological
 // observation into. The fields and XML mappings are based on
 // http://www.nws.noaa.gov/view/current_observation.xsd. This package is built
 // with an eye towards home automation applications and usefullness for most
@@ -85,46 +85,59 @@ type observation struct {
 
 // convert converts an unexported observation struct to an exported
 // observation struct
-func (o *observation) convert() (*Observation, error) {
-	ret := Observation{}
-	ret.Location = o.Location
-	ret.StationId = o.StationId
-	ret.Latitude = o.Latitude
-	ret.Longitude = o.Longitude
-	ret.Elevation = o.Elevation
+func newObservationFromXML(xmlBytes []byte) (*Observation, error) {
+	// decode the byte array into an observation struct
+	// creating our own decoder is required since the character set isn't UTF-8
+	raw := &observation{}
+	reader := bytes.NewReader(xmlBytes)
+	decoder := xml.NewDecoder(reader)
+	decoder.CharsetReader = charset.NewReaderLabel
+	if err := decoder.Decode(raw); err != nil {
+		return nil, err
+	}
+
+	// build the Observation struct
+	ret := &Observation{}
+	ret.Location = raw.Location
+	ret.StationId = raw.StationId
+	ret.Latitude = raw.Latitude
+	ret.Longitude = raw.Longitude
+	ret.Elevation = raw.Elevation
 	// the name of the XML field implies that the time will be provided in
 	// RFC822 format, but it is actually RFC1123Z time as defined by the Go
 	// time package. 😞
-	time, err := time.Parse(observationTimeFmt, o.ObservationTimeRFC822)
+	time, err := time.Parse(observationTimeFmt, raw.ObservationTimeRFC822)
 	if err != nil {
 		return nil, err
 	}
 	ret.Time = time
-	ret.Weather = o.Weather
-	ret.TempF = o.TempF
-	ret.TempC = o.TempC
-	ret.RelativeHumidity = o.RelativeHumidity
-	ret.WindDir = o.WindDir
-	ret.WindDegrees = o.WindDegrees
-	ret.WindMph = o.WindMph
-	ret.WindKt = o.WindKt
-	ret.WindGustMph = o.WindGustMph
-	ret.WindGustKt = o.WindGustKt
-	ret.PressureMb = o.PressureMb
-	ret.PressureIn = o.PressureIn
-	ret.DewpointF = o.DewpointF
-	ret.DewpointC = o.DewpointC
-	ret.HeatIndexF = o.HeatIndexF
-	ret.HeatIndexC = o.HeatIndexC
-	ret.WindchillF = o.WindchillF
-	ret.WindchillC = o.WindchillC
-	ret.VisibilityMi = o.VisibilityMi
-	return &ret, nil
+	ret.Weather = raw.Weather
+	ret.TempF = raw.TempF
+	ret.TempC = raw.TempC
+	ret.RelativeHumidity = raw.RelativeHumidity
+	ret.WindDir = raw.WindDir
+	ret.WindDegrees = raw.WindDegrees
+	ret.WindMph = raw.WindMph
+	ret.WindKt = raw.WindKt
+	ret.WindGustMph = raw.WindGustMph
+	ret.WindGustKt = raw.WindGustKt
+	ret.PressureMb = raw.PressureMb
+	ret.PressureIn = raw.PressureIn
+	ret.DewpointF = raw.DewpointF
+	ret.DewpointC = raw.DewpointC
+	ret.HeatIndexF = raw.HeatIndexF
+	ret.HeatIndexC = raw.HeatIndexC
+	ret.WindchillF = raw.WindchillF
+	ret.WindchillC = raw.WindchillC
+	ret.VisibilityMi = raw.VisibilityMi
+
+	return ret, nil
 }
 
-// getCurrentObservationXML gets the most recent observation from a stationId
-// and returns a byte array containing XML
-func getCurrentObservationXML(httpClient *http.Client, stationId string) ([]byte, error) {
+// getCurrentObservation gets the most recent observation from a stationId and
+// returns a pointer to an Observation struct
+func getCurrentObservation(httpClient *http.Client, stationId string) (*Observation, error) {
+	// make the HTTP request and read resp.Body
 	resp, err := httpClient.Get(fmt.Sprintf(currentObservationsURLFmt, stationId))
 	if err != nil {
 		return nil, err
@@ -133,29 +146,11 @@ func getCurrentObservationXML(httpClient *http.Client, stationId string) ([]byte
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("http response had status: %s", resp.Status)
 	}
-	return ioutil.ReadAll(resp.Body)
-}
-
-// processObservationXML accepts an observation in XML and returns a pointer to
-// an Observation struct
-func processObservationXML(observationXML []byte) (*Observation, error) {
-	obs := &observation{}
-	// creating our own decoder is required since the character set isn't UTF-8
-	reader := bytes.NewReader(observationXML)
-	decoder := xml.NewDecoder(reader)
-	decoder.CharsetReader = charset.NewReaderLabel
-	if err := decoder.Decode(obs); err != nil {
-		return nil, err
-	}
-	return obs.convert()
-}
-
-// getCurrentObservation gets the most recent observation from a stationId and
-// returns a pointer to an Observation struct
-func getCurrentObservation(httpClient *http.Client, stationId string) (*Observation, error) {
-	obsXML, err := getCurrentObservationXML(httpClient, stationId)
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
-	return processObservationXML(obsXML)
+
+	// convert the *observation to an *Observation
+	return newObservationFromXML(body)
 }
