@@ -107,10 +107,12 @@ func TestGetCurrentObservation(t *testing.T) {
 	defer httpmock.DeactivateAndReset()
 	httpmock.RegisterResponder("GET",
 		"http://w1.weather.gov/xml/current_obs/KFAK.xml",
-		httpmock.NewStringResponder(200, testObservation))
+		httpmock.NewStringResponder(200, testObservation),
+	)
 
 	c := &http.Client{}
 	obs, err := getCurrentObservation(c, "KFAK")
+
 	require.Nil(t, err)
 	require.Equal(t, *obs, parsedTestObservation)
 }
