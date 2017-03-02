@@ -1,4 +1,4 @@
-package cap
+package ouralerts
 
 import (
 	"testing"

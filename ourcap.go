@@ -1,8 +1,8 @@
 /*
-	Package cap implements the ability to parse and validate OASIS Common
+	Package ouralerts implements the ability to parse and validate OASIS Common
 	Alerting Protocol Alert Messages
 */
-package cap
+package ouralerts
 
 import (
 	"encoding/xml"
