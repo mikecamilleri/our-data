@@ -1,5 +1,5 @@
 /*
-Package mock contains mocked http endpoints to facilitate testing of the nws
+Package mock contains mocked http endpoints to facilitate testing of the ourwx
 package.
 */
 

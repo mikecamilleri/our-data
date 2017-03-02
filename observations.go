@@ -1,4 +1,4 @@
-package nws
+package ourwx
 
 import (
 	"bytes"

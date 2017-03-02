@@ -1,4 +1,4 @@
-package nws
+package ourwx
 
 import (
 	"net/http"
@@ -7,7 +7,7 @@ import (
 
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
 
-	"github.com/mikecamilleri/nws/mock"
+	"github.com/mikecamilleri/ourwx/mock"
 	"github.com/stretchr/testify/require"
 )
 

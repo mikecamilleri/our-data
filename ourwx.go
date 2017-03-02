@@ -1,12 +1,12 @@
 /*
-Package nws implements a client to interact with several United Sates
+Package ourwx implements a client to interact with several United Sates
 National Weather Service (NWS) APIs.
 
 This package is built with an eye towards home automation and similar
 applications of interest to the general public. This is reflected in the
 available APIs and subset of data retrieved from each.
 */
-package nws
+package ourwx
 
 import (
 	"errors"
