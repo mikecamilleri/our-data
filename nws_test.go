@@ -872,8 +872,7 @@ func TestSetZoneAndStationFromCoordinates(t *testing.T) {
 				return httpmock.NewStringResponse(200, testHTMLForecast), nil
 			}
 			// Annoyingly, the NWS website returns 200 if the coordinates are
-			// bad. The body in this case doesn't matter so is an empty
-			// string
+			// bad. The body in this case doesn't matter so is an empty string.
 			return httpmock.NewStringResponse(200, ""), nil
 		},
 	)

@@ -16,7 +16,7 @@ const (
 	currentObservationsURLFmt = "http://w1.weather.gov/xml/current_obs/%s.xml"
 )
 
-// Observation holds a single meteorological observation. Numeric fields are
+// An Observation holds a single meteorological observation. Numeric fields are
 // type `string` so that empty strings may represent missing data in the struct
 // and so that decimal values remain exact.
 type Observation struct {
@@ -49,10 +49,8 @@ type Observation struct {
 
 // observation is a private struct used to parse a single meteorological
 // observation into. The fields and XML mappings are based on
-// http://www.nws.noaa.gov/view/current_observation.xsd. This package is built
-// with an eye towards home automation applications and usefullness for most
-// people. Some available fields are not included becuase they are outside the
-// scope of this package.
+// http://www.nws.noaa.gov/view/current_observation.xsd. Some available fields
+// are not included becuase they are outside the scope of this package.
 type observation struct {
 	// SuggestedPickup       string `xml:"suggested_pickup"`
 	// SuggestedPickupPeriod string `xml:"suggested_pickup_period"`
@@ -83,8 +81,7 @@ type observation struct {
 	VisibilityMi          string `xml:"visibility_mi"`
 }
 
-// convert converts an unexported observation struct to an exported
-// observation struct
+// newObservationFromXML builds a new Observation from raw XML and returns it.
 func newObservationFromXML(xmlBytes []byte) (*Observation, error) {
 	// decode the byte array into an observation struct
 	// creating our own decoder is required since the character set isn't UTF-8
@@ -134,11 +131,11 @@ func newObservationFromXML(xmlBytes []byte) (*Observation, error) {
 	return ret, nil
 }
 
-// getCurrentObservation gets the most recent observation from a stationId and
+// getCurrentObservation gets the most recent observation from a station and
 // returns a pointer to an Observation struct
-func getCurrentObservation(httpClient *http.Client, stationId string) (*Observation, error) {
+func getCurrentObservation(httpClient *http.Client, station string) (*Observation, error) {
 	// make the HTTP request and read resp.Body
-	resp, err := httpClient.Get(fmt.Sprintf(currentObservationsURLFmt, stationId))
+	resp, err := httpClient.Get(fmt.Sprintf(currentObservationsURLFmt, station))
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +148,5 @@ func getCurrentObservation(httpClient *http.Client, stationId string) (*Observat
 		return nil, err
 	}
 
-	// convert the *observation to an *Observation
 	return newObservationFromXML(body)
 }
