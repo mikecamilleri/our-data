@@ -1,10 +1,10 @@
 # OurAlerts (`ouralerts`)
 
-Validate and parse Common Alerting Protocol (CAP) alert messages in Go (Golang).
+Validate and parse Common Alerting Protocol (CAP) alert messages in Go.
 
 ## Warning!
 
-This project is a work in progress and absolutely not production ready.
+This project is a work in progress and absolutely not production ready. The exported interface is unstable. 
 
 ## Introduction
 
