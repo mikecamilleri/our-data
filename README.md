@@ -1,4 +1,4 @@
-# Our Alerts (`ouralerts`)
+# OurAlerts (`ouralerts`)
 
 Validate and parse Common Alerting Protocol (CAP) alert messages in Go (Golang).
 
