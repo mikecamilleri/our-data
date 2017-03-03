@@ -23,7 +23,7 @@ var (
 	XMLNamespaces = map[string]string{
 		"urn:oasis:names:tc:emergency:cap:1.2": "1.2",
 		"urn:oasis:names:tc:emergency:cap:1.1": "1.1",
-		"urn:oasis:names:tc:emergency:cap:1.0": "1.0",
+		// "urn:oasis:names:tc:emergency:cap:1.0": "1.0",
 	}
 	AlertStatuses = map[string]string{
 		"Actual":   "Actionable by all targeted recipients",
@@ -94,8 +94,6 @@ var (
 
 // Alert represents a parsed and validated CAP alert message
 type Alert struct {
-	// TODO: add namespace support to distiguish CAP versions
-	// CAPVersion  string
 	Identifier  string
 	Sender      string
 	Sent        time.Time
@@ -150,13 +148,9 @@ type Resource struct {
 // Area
 type Area struct {
 	AreaDesc string
-	// Polygon is already a reference type, but we want a pointer here for
-	// consistency with []*Cricle
 	Polygons []Polygon
 	Circles  []Circle
 	Geocodes []NamedValue
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
 	Altitude string // feet above mean sea level
 	Ceiling  string // feet above mean sea level
 }
@@ -169,6 +163,7 @@ type Reference struct {
 }
 
 // NamedValue
+// TODO: replace with url.Values
 type NamedValue struct {
 	ValueName string
 	Value     string
@@ -179,31 +174,26 @@ type Polygon []Point
 
 // Circle defines a circular area
 type Circle struct {
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
-	// The coordinate system used is WGS 84.
 	Point  Point
 	Radius string // kilometers
 }
 
 // Point defines a WGS 84 coordinate point on the earth
 type Point struct {
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
 	Latitude  string
 	Longitude string
 }
 
 // ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
 func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
-	raw := &alert{}
-	if err := xml.Unmarshal(alertMsgXML, raw); err != nil {
+	a := &alert{}
+	if err := xml.Unmarshal(alertMsgXML, a); err != nil {
 		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
 	}
-	if err := raw.validate(); err != nil {
+	if err := a.validate(); err != nil {
 		return nil, fmt.Errorf("error(s) validating alert: %s", err)
 	}
-	processed, err := raw.convert()
+	processed, err := a.convert()
 	if err != nil {
 		return nil, fmt.Errorf("error(s) converting alert: %s", err)
 	}
@@ -211,174 +201,10 @@ func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
 	return processed, nil
 }
 
-// parseReferencesString parses a references string
-func parseReferencesString(referencesString string) ([]Reference, error) {
-	if len(referencesString) == 0 {
-		return nil, errors.New("referencesString is empty")
-	}
-	refStrings := strings.Fields(referencesString)
-	var refs []Reference
-	for _, rs := range refStrings {
-		parts := strings.Split(rs, ",")
-		if len(parts) != 3 {
-			return nil, errors.New("reference must contain three parts")
-		}
-		t, err := time.Parse(timeFormat, parts[2])
-		if err != nil {
-			return nil, errors.New("invalid time string")
-		}
-		refs = append(refs, Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
-	}
-	return refs, nil
-}
-
-// isValidReferencesString tests whether a references string is valid
-func isValidReferencesString(referenceString string) bool {
-	if _, err := parseReferencesString(referenceString); err != nil {
-		return false
-	}
-	return true
-}
-
-// parsePolygonString parses a polygon string
-func parsePolygonString(polygonString string) (Polygon, error) {
-	// TODO: test validity of numbers
-	pointStrings := strings.Fields(polygonString)
-	if len(pointStrings) < 4 {
-		return nil, errors.New("a polygon must contain al least four points")
-	}
-	var poly Polygon
-	for _, ps := range pointStrings {
-		vals := strings.Split(ps, ",")
-		if len(vals) != 2 {
-			return nil, errors.New("point must contain exactly two values")
-		}
-		poly = append(poly, Point{Latitude: vals[0], Longitude: vals[1]})
-	}
-	if poly[0] != poly[len(poly)-1] {
-		return nil, errors.New("first and last points must be equal")
-	}
-	return poly, nil
-}
-
-// isValidPolygonString tests whether a polygon string is valid
-func isValidPolygonString(polygonString string) bool {
-	if _, err := parsePolygonString(polygonString); err != nil {
-		return false
-	}
-	return true
-}
-
-// parseCircleString
-func parseCircleString(circleString string) (Circle, error) {
-	// TODO: test validity of numbers
-	var circle Circle
-	pointRadiusStrings := strings.Fields(circleString)
-	if len(pointRadiusStrings) != 2 {
-		return circle, errors.New("a circle must contain a central point and a radius")
-	}
-	psVals := strings.Split(pointRadiusStrings[0], ",")
-	if len(psVals) != 2 {
-		return circle, errors.New("central point must contain exactly two values")
-	}
-	circle.Point = Point{Latitude: psVals[0], Longitude: psVals[1]}
-	circle.Radius = pointRadiusStrings[1]
-	return circle, nil
-}
-
-// isValidCircleString tests whether a circle string is valid
-func isValidCircleString(circleString string) bool {
-	if _, err := parseCircleString(circleString); err != nil {
-		return false
-	}
-	return true
-}
-
-// parseAddressesString parses an addresses string
-func parseAddressesString(addressesString string) []string {
-	return splitSpaceDelimitedQuotedStrings(addressesString)
-}
-
-// isValidAddressesString tests whether an addresses string is valid
-func isValidAddressesString(addressesString string) bool {
-	if len(parseAddressesString(addressesString)) == 0 {
-		return false
-	}
-	return true
-}
-
-// parseIncidentsString parases an incidents string
-func parseIncidentsString(indidentsString string) []string {
-	return splitSpaceDelimitedQuotedStrings(indidentsString)
-}
-
-// isValidIncidentsString tests whether an incidentas string is valid
-func isValidIncidentsString(incidentsString string) bool {
-	if len(parseIncidentsString(incidentsString)) == 0 {
-		return false
-	}
-	return true
-}
-
-// splitSpaceDelimitedQuotedStrings splits space delimited quoted strings into
-// a slice of strings
-func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
-	// we use strings.SplitAfter to retain multiple whitespace in quoted
-	// sections
-	var fields []string
-	if len(spaceDelimitedQuotedStrings) == 0 {
-		return nil
-	}
-	words := strings.SplitAfter(spaceDelimitedQuotedStrings, ` `)
-	var currField string
-	for _, word := range words {
-		if strings.HasPrefix(word, `"`) {
-			// first word of quoted section
-			trimmed := strings.TrimPrefix(word, `"`)
-			currField = trimmed
-		} else if len(currField) == 0 {
-			// this block handles words not in a quoted section
-			fields = append(fields, strings.TrimSuffix(word, ` `))
-		} else if strings.HasSuffix(word, `" `) {
-			// last word of quoted section
-			trimmed := strings.TrimSuffix(word, `" `)
-			currField += trimmed
-			fields = append(fields, currField)
-			currField = "" // triggers start of new field on next iteration
-		} else if strings.HasSuffix(word, `"`) {
-			// last word of quoted section and string
-			trimmed := strings.TrimSuffix(word, `"`)
-			currField += trimmed
-			fields = append(fields, currField)
-			currField = "" // triggers start of new field on next iteration
-		} else {
-			// intermediate word of quoted section
-			currField += word
-		}
-	}
-	return fields
-}
-
-// isValidTimeString tests whether a time string is valid
-func isValidTimeString(timeString string) bool {
-	if _, err := time.Parse(timeFormat, timeString); err != nil {
-		return false
-	}
-	return true
-}
-
-// isValidURLString tests whether a URL string is valid
-func isValidURLString(urlString string) bool {
-	if _, err := url.Parse(urlString); err != nil {
-		return false
-	}
-	return true
-}
-
-// alert is an unexported struct used internally to unmarshal a CAP alert
-// message XML into
+// alert is an unexported struct used internally for unmarshalling a CAP alert
+// message
 type alert struct {
-	// TODO: need to add namespace support to distiguish CAP versions
+	// TODO: add namespace support to distiguish CAP versions
 	Identifier  string   `xml:"identifier"`
 	Sender      string   `xml:"sender"`
 	Sent        string   `xml:"sent"`
@@ -590,14 +416,30 @@ func (a *alert) validate() error {
 			if len(area.AreaDesc) == 0 {
 				missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].area[%d] must have uri or derefUri", i, j))
 			}
-			for _, p := range area.Polygons {
+			// TODO: this is a sloppy hack to deal with empty fields. Need to
+			// implement a better approach
+			deleted := 0
+			for k, p := range area.Polygons {
+				if len(p) == 0 {
+					kd := k - deleted
+					a.Infos[i].Areas[j].Polygons = append(a.Infos[i].Areas[j].Polygons[:kd], a.Infos[i].Areas[j].Polygons[kd+1:]...)
+					deleted++
+					continue
+				}
 				if !isValidPolygonString(p) {
-					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].polygon[%d]", i, j, p))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].polygon[%d]", i, j, k))
 				}
 			}
-			for _, c := range area.Circles {
+			deleted = 0
+			for k, c := range area.Circles {
+				if len(c) == 0 {
+					kd := k - deleted
+					a.Infos[i].Areas[j].Circles = append(a.Infos[i].Areas[j].Circles[:kd], a.Infos[i].Areas[j].Circles[kd+1:]...)
+					deleted++
+					continue
+				}
 				if !isValidCircleString(c) {
-					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].circle[%d]", i, j, c))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].circle[%d]", i, j, k))
 				}
 			}
 		}
@@ -744,4 +586,172 @@ func (a *alert) convert() (*Alert, error) {
 	}
 
 	return &ret, nil
+}
+
+// parseReferencesString parses a references string
+func parseReferencesString(referencesString string) ([]Reference, error) {
+	if len(referencesString) == 0 {
+		return nil, errors.New("referencesString is empty")
+	}
+	refStrings := strings.Fields(referencesString)
+	var refs []Reference
+	for _, rs := range refStrings {
+		parts := strings.Split(rs, ",")
+		if len(parts) != 3 {
+			return nil, errors.New("reference must contain three parts")
+		}
+		t, err := time.Parse(timeFormat, parts[2])
+		if err != nil {
+			return nil, errors.New("invalid time string")
+		}
+		refs = append(refs, Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
+	}
+	return refs, nil
+}
+
+// isValidReferencesString tests whether a references string is valid
+func isValidReferencesString(referenceString string) bool {
+	if _, err := parseReferencesString(referenceString); err != nil {
+		return false
+	}
+	return true
+}
+
+// parsePolygonString parses a polygon string
+func parsePolygonString(polygonString string) (Polygon, error) {
+	if len(polygonString) == 0 {
+		return nil, errors.New("polygonsString is empty")
+	}
+	pointStrings := strings.Fields(polygonString)
+	if len(pointStrings) < 4 {
+		return nil, errors.New("a polygon must contain at least four points")
+	}
+	var poly Polygon
+	for _, ps := range pointStrings {
+		vals := strings.Split(ps, ",")
+		if len(vals) != 2 {
+			return nil, errors.New("point must contain exactly two values")
+		}
+		poly = append(poly, Point{Latitude: vals[0], Longitude: vals[1]})
+	}
+	if poly[0] != poly[len(poly)-1] {
+		return nil, errors.New("first and last points must be equal")
+	}
+	return poly, nil
+}
+
+// isValidPolygonString tests whether a polygon string is valid
+func isValidPolygonString(polygonString string) bool {
+	if _, err := parsePolygonString(polygonString); err != nil {
+		return false
+	}
+	return true
+}
+
+// parseCircleString
+func parseCircleString(circleString string) (Circle, error) {
+	var circle Circle
+	if len(circleString) == 0 {
+		return circle, errors.New("circleString is empty")
+	}
+	pointRadiusStrings := strings.Fields(circleString)
+	if len(pointRadiusStrings) != 2 {
+		return circle, errors.New("a circle must contain a central point and a radius")
+	}
+	psVals := strings.Split(pointRadiusStrings[0], ",")
+	if len(psVals) != 2 {
+		return circle, errors.New("central point must contain exactly two values")
+	}
+	circle.Point = Point{Latitude: psVals[0], Longitude: psVals[1]}
+	circle.Radius = pointRadiusStrings[1]
+	return circle, nil
+}
+
+// isValidCircleString tests whether a circle string is valid
+func isValidCircleString(circleString string) bool {
+	if _, err := parseCircleString(circleString); err != nil {
+		return false
+	}
+	return true
+}
+
+// parseAddressesString parses an addresses string
+func parseAddressesString(addressesString string) []string {
+	return splitSpaceDelimitedQuotedStrings(addressesString)
+}
+
+// isValidAddressesString tests whether an addresses string is valid
+func isValidAddressesString(addressesString string) bool {
+	if len(parseAddressesString(addressesString)) == 0 {
+		return false
+	}
+	return true
+}
+
+// parseIncidentsString parases an incidents string
+func parseIncidentsString(indidentsString string) []string {
+	return splitSpaceDelimitedQuotedStrings(indidentsString)
+}
+
+// isValidIncidentsString tests whether an incidentas string is valid
+func isValidIncidentsString(incidentsString string) bool {
+	if len(parseIncidentsString(incidentsString)) == 0 {
+		return false
+	}
+	return true
+}
+
+// splitSpaceDelimitedQuotedStrings splits space delimited quoted strings into
+// a slice of strings
+func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
+	if len(spaceDelimitedQuotedStrings) == 0 {
+		return nil
+	}
+	var fields []string
+	// we use strings.SplitAfter to retain multiple whitespace in quoted
+	// sections
+	words := strings.SplitAfter(spaceDelimitedQuotedStrings, ` `)
+	var currField string
+	for _, word := range words {
+		if strings.HasPrefix(word, `"`) {
+			// first word of quoted section
+			trimmed := strings.TrimPrefix(word, `"`)
+			currField = trimmed
+		} else if len(currField) == 0 {
+			// this block handles words not in a quoted section
+			fields = append(fields, strings.TrimSuffix(word, ` `))
+		} else if strings.HasSuffix(word, `" `) {
+			// last word of quoted section
+			trimmed := strings.TrimSuffix(word, `" `)
+			currField += trimmed
+			fields = append(fields, currField)
+			currField = "" // triggers start of new field on next iteration
+		} else if strings.HasSuffix(word, `"`) {
+			// last word of quoted section and string
+			trimmed := strings.TrimSuffix(word, `"`)
+			currField += trimmed
+			fields = append(fields, currField)
+			currField = "" // triggers start of new field on next iteration
+		} else {
+			// intermediate word of quoted section
+			currField += word
+		}
+	}
+	return fields
+}
+
+// isValidTimeString tests whether a time string is valid
+func isValidTimeString(timeString string) bool {
+	if _, err := time.Parse(timeFormat, timeString); err != nil {
+		return false
+	}
+	return true
+}
+
+// isValidURLString tests whether a URL string is valid
+func isValidURLString(urlString string) bool {
+	if _, err := url.Parse(urlString); err != nil {
+		return false
+	}
+	return true
 }

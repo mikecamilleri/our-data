@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// CAP Alert Message Examples from specification
+	// CAP alert message examples from specification
 	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
 	testHomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
@@ -191,6 +191,510 @@ const (
    </info>
 </alert>`
 
+	// actual CAP alert messages from the National Weather Service. The comment
+	// near the top of each message is incorrect. These are the actual alert
+	// messages and not part of an Atom feed.
+
+	testNWSHydrologicOutlook = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Fri, 03 Mar 2017 06:00:00 GMT -->
+<identifier>NOAA-NWS-ALERTS-AR125843BFB820.HydrologicOutlook.125843FE95E0AR.JANESFJAN.1758a41ffe72dccbcd11038a67ab6cd2</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2017-03-03T00:00:00-06:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for Ashley; Chicot (Arkansas) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Hydrologic Outlook</event>
+<urgency>Future</urgency>
+<severity>Unknown</severity>
+<certainty>Possible</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value></value>
+</eventCode>
+<effective>2017-03-03T00:00:00-06:00</effective>
+<expires>2017-03-07T12:00:00-06:00</expires>
+<senderName>NWS Jackson (Central Mississippi)</senderName>
+<headline>Hydrologic Outlook issued March 03 at 12:00AM CST until March 07 at 12:00PM CST by NWS Jackson</headline>
+<description>...SPRING FLOOD POTENTIAL OUTLOOK...
+...FLOOD RISK IS BELOW AVERAGE ACROSS THE TOMBIGBEE RIVER SYSTEM...
+...FLOOD RISE IS AVERAGE ACROSS THE REMAINDER OF THE FORECAST AREA...
+This outlook considers rainfall which has already fallen,
+snowpack,soil moisture, streamflow, and the 90 day rainfall and
+temperature outlook. The primary factor in the development of
+significant river flooding across the WFO Jackson Forecast Area is
+the occurrence of excessive rainfall in a relatively short period of
+time.
+SYNOPSIS...
+Over the past several months, below normal precipitation
+has occurred over the lower Missouri and middle Mississippi Valleys.
+Warmer temperatures have kept areas in the lower Mississippi River
+Valley from receiving significant snow this season. Snow depths of 2
+to 4 inches are confined to portions of Minnesota, Wisconsin, and
+north Iowa. Snow water equivalents are generally 0.5 inches or less.
+The remainder of the area is snow free. Soil moisture conditions are
+generally below normal over the lower Missouri and middle
+Mississippi Valleys and near normal over lower Ohio Valley.
+Across the ARKLAMISS Region, temperatures have been well above
+normal for the first two months of the year. Vegetation is beginning
+to grow earlier than normal. Higher evapotranspiration rates than
+normal are already occurring. Rainfall since the first of the year
+is running at or below normal with only a few isolated areas having
+above normal rainfall. Soil moisture is at or below normal across the
+region.
+MISSISSIPPI RIVER FROM ARKANSAS CITY TO NATCHEZ...
+The flood season has been uneventful on the Ohio and Mississippi
+Rivers. Streamflows have been near to below normal and no flooding
+has occurred this season. The current forecast shows no flooding
+over the next couple of weeks but higher flows will occur later
+into March.
+See the chart below for specific locations showing percent of normal
+streamflows:
+3/1
+Mississippi River             Thebes IL     111%
+Ohio River                     Cairo IL      67%
+Mississippi River            Memphis TN      36%
+Mississippi River      Arkansas City AR      49%
+Mississippi River          Vicksburg MS      66%
+Mississippi River            Natchez MS      70%
+Mississippi River  Red River Landing LA      75%
+Mississippi River        Baton Rouge LA      74%
+Mississippi River        New Orleans LA      74%
+Based on existing soil moisture, streamflow conditions, and normal
+spring rainfall patterns; an Average Flood Potential is expected
+along the lower Mississippi and lower Ohio Rivers. The magnitude of
+future crests will depend on the amount and extent of any upstream
+accumulation of snow cover and resultant snowmelt; coupled with the
+frequency, intensity, and extent of spring rains.
+OUACHITA/BLACK BASINS OF SOUTHEAST ARKANSAS AND NORTHEAST
+LOUISIANA...
+Streamflows are running near and below seasonal averages. Soil
+moisture content is near normal and no flooding is occurring or
+expected at this time.
+Observed daily streamflows as a percent of mean are given below:
+3/1
+Bayou Bartholomew             Portland AR     52%
+Bayou Bartholomew                Jones LA     27%
+Tensas                          Tendal LA     69%
+Bayou Macon                     Eudora AR     28%
+Ouachita River                  Monroe LA     82%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns; an Average Flood Potential is expected over the
+Ouachita and Black River Basins.
+BIG BLACK AND HOMOCHITTO RIVER BASINS...
+Soil moisture and streamflows have been seasonal to below seasonal
+averages. No flooding is occurring or expected over the next several
+days.
+Observed daily streamflows as a percent of mean are given below:
+3/1
+Big Black River                   West MS     64%
+Big Black River                 Bovina MS     24%
+Homochitto River               Rosetta MS     15%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns; an Average Flood Potential is expected over the
+Big Black River Basin.
+YAZOO BASIN...
+Streamflows are running below seasonal averages. Soil moisture
+content is near seasonal averages and no flooding is expected during
+the next several days.
+Observed Daily Streamflows as a percent of normal:
+3/1
+Tallahatchie                     Money MS      27%
+Big Sunflower                Sunflower MS      30%
+Percent of available flood control storage is given below.
+3/1
+Arkabutla Res. MS     86%
+Sardis Res. MS     85%
+Enid Res. MS     86%
+Grenada Res. MS     91%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns; an Average Flood Potential is expected over the
+Yazoo River Basin.
+PEARL RIVER BASIN...
+Heavy rainfall near the end of January produced some minor flooding
+along tributaries in the Upper Pearl and along the mainstem of the
+lower Pearl River. For the last month, soil moisture content and
+streamflows have been normal to below seasonal averages. No flooding
+is occurring or expected over the next several days.
+Observed daily streamflows as a percent of mean are given below:
+3/1
+Pearl River                   Carthage MS      26%
+Pearl River                    Jackson MS      38%
+Pearl River                 Monticello MS      34%
+Pearl River                   Columbia MS      18%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns; an Average Flood Potential is expected over the
+Pearl River Basin.
+PASCAGOULA RIVER BASIN INCLUDING THE LEAF AND CHICKASAWHAY SUB-
+BASINS...
+Seasonal rainfall in January produced minor to moderate rises. No
+flooding is occurring or expected over the next several days.
+Soil moisture content is near seasonal levels while streamflows are
+running below normal.
+Observed daily streamflows as a percent of mean are given below:
+3/1
+Leaf River                    Collins MS       50%
+Leaf River                Hattiesburg MS       38%
+Tallahala Creek                Laurel MS       32%
+Chickasawhay River         Enterprise MS       39%
+Black Creek                  Brooklyn MS       49%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns; an Average Flood Potential is expected over the
+Pascagoula River Basin.
+TOMBIGBEE RIVER IN MISSISSIPPI...
+Soil moisture content and streamflows have been normal seasonal
+averages. No flooding is occurring or expected over the next several
+days.
+Observed daily streamflows as a percent of mean are given below:
+3/1
+Tombigbee River                Bigbee MS       77%
+Buttahatchee River           Aberdeen MS       62%
+Luxapallila Creek            Columbus MS       21%
+Noxubee River                   Macon MS       18%
+Based on existing soil moisture, streamflows, and normal spring
+rainfall patterns;an below average flood potential is expected
+across the Tombigbee Basin.
+EXTENDED TEMPERATURE AND PRECIPITATION OUTLOOK...
+The 8-14 Day Outlook issued by the NWS Climate Prediction Center
+indicates chances of above normal temperatures. Southeast of the
+Natchez Trace, there are equal chances of above normal, normal, and
+below normal rainfall. Northwest of the Trace, there is chance for
+above normal rainfall. Across the Lower Mississippi Valley, most of
+the area can expect above normal rainfall.
+The 30 Day Outlook indicates chances of above normal temperatures
+across the area. Equal chances of above/below normal precipitation
+is indicated over the lower Mississippi Valley.
+The 90 Day Outlook issued by the NWS Climate Prediction Center
+indicates chances of above normal temperatures over the lower
+Mississippi Valley. Equal chances of above/below normal
+precipitation is indicated over the lower Mississippi Valley.
+This will be the last scheduled spring flood outlook for 2017.</description>
+<instruction></instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>ARZ074-075-LAZ007>009-015-016-023>026-MSZ018-019-025>066-072>074</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>Ashley; Chicot</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>005003</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>005017</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>ARZ074</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>ARZ075</value>
+</geocode>
+</area>
+</info>
+</alert>`
+
+	testNWSWinterWeatherAdvisory = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Fri, 03 Mar 2017 02:17:00 GMT -->
+<identifier>NOAA-NWS-ALERTS-AK125843C0F744.WinterWeatherAdvisory.125843C18CE0AK.AJKWSWAJK.68c3463fbe08420b2fe3cd80b30f55f6</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2017-03-03T05:17:00-09:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for Dixon Entrance to Cape Decision Coastal Area (Alaska) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Winter Weather Advisory</event>
+<urgency>Expected</urgency>
+<severity>Minor</severity>
+<certainty>Likely</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value></value>
+</eventCode>
+<effective>2017-03-03T05:17:00-09:00</effective>
+<expires>2017-03-03T09:00:00-09:00</expires>
+<senderName>NWS Juneau (Juneau and surrounding areas)</senderName>
+<headline>Winter Weather Advisory issued March 03 at 5:17AM AKST until March 03 at 9:00AM AKST by NWS Juneau</headline>
+<description>...WINTER WEATHER ADVISORY REMAINS IN EFFECT UNTIL 9 AM AKST THIS
+MORNING...
+* SNOW...Additional 1 to 3 inches through mid morning Friday.
+Snowfall rates in heavier snow showers could exceed 2 inches
+per hour.
+* TIMING...The snow showers should begin to diminish by late
+Friday morning.
+* IMPACTS...Visibility will be reduced below a half mile during
+heavier snow showers. Travel may be hazardous.</description>
+<instruction>An advisory means that a potentially hazardous event is already
+occurring or imminent.
+This statement will be updated by 9 AM AKST Friday or sooner if
+conditions warrant.</instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>AKZ027</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value>/O.CON.PAJK.WW.Y.0015.000000T0000Z-170303T1800Z/</value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>Dixon Entrance to Cape Decision Coastal Area</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>002198</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>AKZ027</value>
+</geocode>
+</area>
+</info>
+</alert>`
+
+	testNWSWinterStormWarning = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Fri, 03 Mar 2017 12:30:00 GMT -->
+<identifier>NOAA-NWS-ALERTS-WA125843C0AE38.WinterStormWarning.125843CF4880WA.SEWWSWSEW.64b531dc35ffdbfe7d1d2aebe5604882</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2017-03-03T04:30:00-08:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for West Slopes North Central Cascades and Passes (Washington) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Winter Storm Warning</event>
+<urgency>Expected</urgency>
+<severity>Moderate</severity>
+<certainty>Likely</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value>WSW</value>
+</eventCode>
+<effective>2017-03-03T04:30:00-08:00</effective>
+<expires>2017-03-04T00:00:00-08:00</expires>
+<senderName>NWS Seattle (Northwest Washington)</senderName>
+<headline>Winter Storm Warning issued March 03 at 4:30AM PST until March 04 at 12:00AM PST by NWS Seattle</headline>
+<description>...WINTER STORM WARNING REMAINS IN EFFECT UNTIL MIDNIGHT PST
+TONIGHT...
+* SNOW ACCUMULATIONS...An additional 6 to 14 inches is expected
+through this evening...including Stevens and Snoqualmie Passes.
+* SOME AFFECTED LOCATIONS...Interstate 90 including Snoqualmie
+Pass, and U S Highway 2 including Stevens Pass
+* TIMING...Snowfall intensity will generally peak late this
+afternoon and this evening. Snoqualmie Pass should see snow
+change to rain for a good bit of today, before changing back
+over to snow this evening.
+* SNOW LEVEL...2500 to 3000 feet through this evening, rising to
+3500 feet early Friday. Quickly falling below 1500 feet on this
+evening.
+* MAIN IMPACT...Travel will become difficult on snow covered
+roadways. Expect delays if traveling through the Cascades.</description>
+<instruction>A Winter Storm Warning for heavy snow means severe winter weather
+conditions are expected or occurring. Significant amounts of
+snow are forecast that will make travel dangerous. Only travel in
+an emergency. If you must travel, keep an extra flashlight, food,
+and water in your vehicle in case of an emergency. Call 5-1-1 for
+the latest road conditions in the mountain passes.</instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>WAZ568</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value>/O.CON.KSEW.WS.W.0007.000000T0000Z-170304T0800Z/</value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>West Slopes North Central Cascades and Passes</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>053033</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>053053</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>053061</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>053067</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>WAZ568</value>
+</geocode>
+</area>
+</info>
+</alert>`
+
+	testNWSAirQualityAlert = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Thu, 02 Mar 2017 07:31:00 GMT -->
+<identifier>NOAA-NWS-ALERTS-WY125843B27DCC.AirQualityAlert.125843CE3CECWY.RIWAQARIW.81a02965446ba12d76592f0a3ba9d089</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2017-03-02T12:31:00-07:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for Sublette (Wyoming) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Air Quality Alert</event>
+<urgency>Unknown</urgency>
+<severity>Unknown</severity>
+<certainty>Unknown</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value></value>
+</eventCode>
+<effective>2017-03-02T12:31:00-07:00</effective>
+<expires>2017-03-03T18:15:00-07:00</expires>
+<senderName>NWS Riverton (Western Wyoming)</senderName>
+<headline>Air Quality Alert issued March 02 at 12:31PM MST  by NWS Riverton</headline>
+<description>...Ozone Action Day in Effect for Friday, March 3, 2017 for the
+Upper Green River Basin Ozone Nonattainment Area...
+The following message is transmitted at the request of the
+Air Quality Division of the Wyoming Department of Environmental
+Quality.
+The Air Quality Division has issued an Ozone Action Day for
+Friday, March 3, 2017 for the Upper Green River Basin Ozone
+Nonattainment Area. Ozone is an air pollutant that can cause
+respiratory distress especially to children, the elderly, and
+people with existing respiratory conditions such as asthma. People
+in these sensitive groups should limit strenuous or extended
+outdoor activities, especially in the afternoon and evening.
+For more information, please visit the websites for the Wyoming
+Department of Environmental Quality at deq.wyoming.gov and the
+Wyoming Department of Health at www.health.wyo.gov.</description>
+<instruction></instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>WYC035</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>Sublette</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>056035</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>WYC035</value>
+</geocode>
+</area>
+</info>
+</alert>`
+
 	// constants for unit tests
 	testReferencesStringValid       = `user@example.com,XX1122333,2017-01-01T10:43:00-08:00 user2@example.com,2XX1122333,2017-01-01T10:43:00-08:00`
 	testReferencesStringMissingPart = `user@example.com,2016-01-01T10:43:00-08:00`
@@ -226,6 +730,40 @@ const (
 	testURLStringRelativeValid = `hello`
 	testURLStringInvalid       = `http://example.com\`
 )
+
+// TestProcessAlertMessageXML implicitely tests alert.validate() and
+// alert.convert()
+func TestProcessAlertMessageXML(t *testing.T) {
+	assert := assert.New(t)
+	var err error
+
+	// CAP 1.2 specification examples
+	_, err = ProcessAlertMsgXML([]byte(testHomelandSecurityAdvisorySystemAlert))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testSevereThunderstormWarning))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testEarthquakeReportUpdateMessage))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testAmberAlertMultilingualMessage))
+	assert.Nil(err)
+
+	// Actual NWS examples
+	_, err = ProcessAlertMsgXML([]byte(testNWSHydrologicOutlook))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testNWSWinterWeatherAdvisory))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testNWSWinterStormWarning))
+	assert.Nil(err)
+
+	_, err = ProcessAlertMsgXML([]byte(testNWSAirQualityAlert))
+	assert.Nil(err)
+
+}
 
 func TestParseReferencesString(t *testing.T) {
 	assert := assert.New(t)
@@ -392,21 +930,4 @@ func TestIsValidURLString(t *testing.T) {
 	assert.True(isValidURLString(testURLStringFullValid))
 	assert.True(isValidURLString(testURLStringRelativeValid))
 	assert.False(isValidURLString(testURLStringInvalid))
-}
-
-func TestProcessAlertMessageXML(t *testing.T) {
-	assert := assert.New(t)
-	var err error
-
-	_, err = ProcessAlertMsgXML([]byte(testHomelandSecurityAdvisorySystemAlert))
-	assert.Nil(err)
-
-	_, err = ProcessAlertMsgXML([]byte(testSevereThunderstormWarning))
-	assert.Nil(err)
-
-	_, err = ProcessAlertMsgXML([]byte(testEarthquakeReportUpdateMessage))
-	assert.Nil(err)
-
-	_, err = ProcessAlertMsgXML([]byte(testAmberAlertMultilingualMessage))
-	assert.Nil(err)
 }
