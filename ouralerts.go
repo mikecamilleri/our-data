@@ -161,17 +161,54 @@ type Area struct {
 	Ceiling  string // feet above mean sea level
 }
 
+// Reference holds a reference to another alert
+type Reference struct {
+	Sender     string
+	Identifier string
+	Sent       time.Time
+}
+
 // NamedValue
 type NamedValue struct {
 	ValueName string
 	Value     string
 }
 
-// Reference holds a reference to another alert
-type Reference struct {
-	Sender     string
-	Identifier string
-	Sent       time.Time
+// Polygon defines a polygonal area
+type Polygon []Point
+
+// Circle defines a circular area
+type Circle struct {
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	// The coordinate system used is WGS 84.
+	Point  Point
+	Radius string // kilometers
+}
+
+// Point defines a WGS 84 coordinate point on the earth
+type Point struct {
+	// because golang has no built in support for decimals, these values
+	// are being left as `string` so the caller can handle as necessary.
+	Latitude  string
+	Longitude string
+}
+
+// ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
+func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
+	raw := &alert{}
+	if err := xml.Unmarshal(alertMsgXML, raw); err != nil {
+		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	}
+	if err := raw.validate(); err != nil {
+		return nil, fmt.Errorf("error(s) validating alert: %s", err)
+	}
+	processed, err := raw.convert()
+	if err != nil {
+		return nil, fmt.Errorf("error(s) converting alert: %s", err)
+	}
+
+	return processed, nil
 }
 
 // parseReferencesString parses a references string
@@ -203,17 +240,6 @@ func isValidReferencesString(referenceString string) bool {
 	return true
 }
 
-// Point defines a WGS 84 coordinate point on the earth
-type Point struct {
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
-	Latitude  string
-	Longitude string
-}
-
-// Polygon defines a polygonal area
-type Polygon []Point
-
 // parsePolygonString parses a polygon string
 func parsePolygonString(polygonString string) (Polygon, error) {
 	// TODO: test validity of numbers
@@ -241,15 +267,6 @@ func isValidPolygonString(polygonString string) bool {
 		return false
 	}
 	return true
-}
-
-// Circle defines a circular area
-type Circle struct {
-	// because golang has no built in support for decimals, these values
-	// are being left as `string` so the caller can handle as necessary.
-	// The coordinate system used is WGS 84.
-	Point  Point
-	Radius string // kilometers
 }
 
 // parseCircleString
@@ -727,21 +744,4 @@ func (a *alert) convert() (*Alert, error) {
 	}
 
 	return &ret, nil
-}
-
-// ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
-func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
-	raw := &alert{}
-	if err := xml.Unmarshal(alertMsgXML, raw); err != nil {
-		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
-	}
-	if err := raw.validate(); err != nil {
-		return nil, fmt.Errorf("error(s) validating alert: %s", err)
-	}
-	processed, err := raw.convert()
-	if err != nil {
-		return nil, fmt.Errorf("error(s) converting alert: %s", err)
-	}
-
-	return processed, nil
 }
