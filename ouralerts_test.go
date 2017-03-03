@@ -10,7 +10,7 @@ import (
 const (
 	// CAP Alert Message Examples from specification
 	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
-	HomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
+	testHomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>43b080713727</identifier> 
   <sender>hsas@dhs.gov</sender> 
@@ -44,7 +44,7 @@ const (
   </info>
 </alert>
 `
-	SevereThunderstormWarning = `<?xml version = "1.0" encoding = "UTF-8"?>
+	testSevereThunderstormWarning = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>KSTO1055887203</identifier> 
   <sender>KSTO@NWS.NOAA.GOV</sender> 
@@ -88,7 +88,7 @@ const (
   </info>
 </alert>
 `
-	EarthquakeReportUpdateMessage = `<?xml version = "1.0" encoding = "UTF-8"?>
+	testEarthquakeReportUpdateMessage = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>TRI13970876.2</identifier> 
   <sender>trinet@caltech.edu</sender> 
@@ -134,7 +134,7 @@ const (
   </info>
 </alert>
 `
-	AmberAlertMultilingualMessage = `<?xml version = "1.0" encoding = "UTF-8"?>
+	testAmberAlertMultilingualMessage = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
    <identifier>KAR0-0306112239-SW</identifier> 
    <sender>KARO@CLETS.DOJ.CA.GOV</sender>
@@ -192,39 +192,39 @@ const (
 </alert>`
 
 	// constants for unit tests
-	ReferencesStringValid       = `user@example.com,XX1122333,2017-01-01T10:43:00-08:00 user2@example.com,2XX1122333,2017-01-01T10:43:00-08:00`
-	ReferencesStringMissingPart = `user@example.com,2016-01-01T10:43:00-08:00`
-	ReferencesStringBadTime     = `user@example.com,XX1122333,2016-01-01T10:43:00`
-	ReferencesStringEmpty       = ``
+	testReferencesStringValid       = `user@example.com,XX1122333,2017-01-01T10:43:00-08:00 user2@example.com,2XX1122333,2017-01-01T10:43:00-08:00`
+	testReferencesStringMissingPart = `user@example.com,2016-01-01T10:43:00-08:00`
+	testReferencesStringBadTime     = `user@example.com,XX1122333,2016-01-01T10:43:00`
+	testReferencesStringEmpty       = ``
 
-	PolygonStringValid    = `38.47,-120.14 38.52,-119.74 38.62,-119.89 38.47,-120.14`
-	PolygonStringShort    = `38.47,-120.14 38.62,-119.89 38.47,-120.14`
-	PolygonStringOpen     = `38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89`
-	PolygonStringBadPoint = `38.47,-120.14 38.52 38.62,-119.89 38.47,-120.14`
-	PolygonStringEmpty    = ``
+	testPolygonStringValid    = `38.47,-120.14 38.52,-119.74 38.62,-119.89 38.47,-120.14`
+	testPolygonStringShort    = `38.47,-120.14 38.62,-119.89 38.47,-120.14`
+	testPolygonStringOpen     = `38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89`
+	testPolygonStringBadPoint = `38.47,-120.14 38.52 38.62,-119.89 38.47,-120.14`
+	testPolygonStringEmpty    = ``
 
-	CircleStringValid    = `32.9525,-115.5527 1`
-	CircleStringBadPoint = `-115.5527 1`
-	CircleStringNoPoint  = `1`
-	CircleStringNoRadius = `32.9525,-115.5527`
+	testCircleStringValid    = `32.9525,-115.5527 1`
+	testCircleStringBadPoint = `-115.5527 1`
+	testCircleStringNoPoint  = `1`
+	testCircleStringNoRadius = `32.9525,-115.5527`
 
-	AddressesStringValid = `one@example.com two@example.com`
-	AddressesStringEmpty = ``
+	testAddressesStringValid = `one@example.com two@example.com`
+	testAddressesStringEmpty = ``
 
-	IncidentsStringValid = `XXXX1 XXXX2`
-	IncidentsStringEmpty = ``
+	testIncidentsStringValid = `XXXX1 XXXX2`
+	testIncidentsStringEmpty = ``
 
-	SpaceDelimitedQuotedStringValid  = `"hello world" live "goodbye world"`
-	SpaceDelimitedQuotedStringValid2 = `one two "three ... (3)" four`
-	SpaceDelimitedQuotedStringValid3 = `one`
-	SpaceDelimitedQuotedStringEmpty  = ``
+	testSpaceDelimitedQuotedStringValid  = `"hello world" live "goodbye world"`
+	testSpaceDelimitedQuotedStringValid2 = `one two "three ... (3)" four`
+	testSpaceDelimitedQuotedStringValid3 = `one`
+	testSpaceDelimitedQuotedStringEmpty  = ``
 
-	TimeStringValid   = `2017-01-01T10:43:00-08:00`
-	TimeStringBadZone = `2017-01-01T10:43:00Z`
+	testTimeStringValid   = `2017-01-01T10:43:00-08:00`
+	testTimeStringBadZone = `2017-01-01T10:43:00Z`
 
-	URLStringFullValid     = `http://mikcamilleri.com/`
-	URLStringRelativeValid = `hello`
-	URLStringInvalid       = `http://example.com\`
+	testURLStringFullValid     = `http://mikcamilleri.com/`
+	testURLStringRelativeValid = `hello`
+	testURLStringInvalid       = `http://example.com\`
 )
 
 func TestParseReferencesString(t *testing.T) {
@@ -232,7 +232,7 @@ func TestParseReferencesString(t *testing.T) {
 	var refs []Reference
 	var err error
 
-	refs, err = parseReferencesString(ReferencesStringValid)
+	refs, err = parseReferencesString(testReferencesStringValid)
 	assert.Nil(err)
 	assert.Len(refs, 2)
 	assert.Equal("user@example.com", refs[0].Sender)
@@ -240,15 +240,15 @@ func TestParseReferencesString(t *testing.T) {
 	tm, _ := time.Parse("2006-01-02T15:04:05-07:00", "2017-01-01T10:43:00-08:00")
 	assert.Equal(tm, refs[0].Sent)
 
-	refs, err = parseReferencesString(ReferencesStringMissingPart)
+	refs, err = parseReferencesString(testReferencesStringMissingPart)
 	assert.NotNil(err)
 	assert.Nil(refs)
 
-	refs, err = parseReferencesString(ReferencesStringBadTime)
+	refs, err = parseReferencesString(testReferencesStringBadTime)
 	assert.NotNil(err)
 	assert.Nil(refs)
 
-	refs, err = parseReferencesString(ReferencesStringEmpty)
+	refs, err = parseReferencesString(testReferencesStringEmpty)
 	assert.NotNil(err)
 	assert.Nil(refs)
 }
@@ -256,10 +256,10 @@ func TestParseReferencesString(t *testing.T) {
 func TestIsValidReferencesString(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.True(isValidReferencesString(ReferencesStringValid))
-	assert.False(isValidReferencesString(ReferencesStringMissingPart))
-	assert.False(isValidReferencesString(ReferencesStringBadTime))
-	assert.False(isValidReferencesString(ReferencesStringEmpty))
+	assert.True(isValidReferencesString(testReferencesStringValid))
+	assert.False(isValidReferencesString(testReferencesStringMissingPart))
+	assert.False(isValidReferencesString(testReferencesStringBadTime))
+	assert.False(isValidReferencesString(testReferencesStringEmpty))
 }
 
 func TestParsePolygonString(t *testing.T) {
@@ -267,24 +267,24 @@ func TestParsePolygonString(t *testing.T) {
 	var poly Polygon
 	var err error
 
-	poly, err = parsePolygonString(PolygonStringValid)
+	poly, err = parsePolygonString(testPolygonStringValid)
 	assert.Nil(err)
 	assert.Len(poly, 4)
 	assert.Equal(Point{Latitude: "38.47", Longitude: "-120.14"}, poly[0])
 
-	poly, err = parsePolygonString(PolygonStringShort)
+	poly, err = parsePolygonString(testPolygonStringShort)
 	assert.NotNil(err)
 	assert.Len(poly, 0)
 
-	poly, err = parsePolygonString(PolygonStringOpen)
+	poly, err = parsePolygonString(testPolygonStringOpen)
 	assert.NotNil(err)
 	assert.Len(poly, 0)
 
-	poly, err = parsePolygonString(PolygonStringBadPoint)
+	poly, err = parsePolygonString(testPolygonStringBadPoint)
 	assert.NotNil(err)
 	assert.Len(poly, 0)
 
-	poly, err = parsePolygonString(PolygonStringEmpty)
+	poly, err = parsePolygonString(testPolygonStringEmpty)
 	assert.NotNil(err)
 	assert.Len(poly, 0)
 }
@@ -292,11 +292,11 @@ func TestParsePolygonString(t *testing.T) {
 func TestIsValidPolygonString(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.True(isValidPolygonString(PolygonStringValid))
-	assert.False(isValidPolygonString(PolygonStringShort))
-	assert.False(isValidPolygonString(PolygonStringOpen))
-	assert.False(isValidPolygonString(PolygonStringBadPoint))
-	assert.False(isValidPolygonString(PolygonStringEmpty))
+	assert.True(isValidPolygonString(testPolygonStringValid))
+	assert.False(isValidPolygonString(testPolygonStringShort))
+	assert.False(isValidPolygonString(testPolygonStringOpen))
+	assert.False(isValidPolygonString(testPolygonStringBadPoint))
+	assert.False(isValidPolygonString(testPolygonStringEmpty))
 }
 
 func TestParseCircleString(t *testing.T) {
@@ -304,19 +304,19 @@ func TestParseCircleString(t *testing.T) {
 	var circle Circle
 	var err error
 
-	circle, err = parseCircleString(CircleStringValid)
+	circle, err = parseCircleString(testCircleStringValid)
 	assert.Nil(err)
 	assert.Equal(Circle{Point: Point{Latitude: "32.9525", Longitude: "-115.5527"}, Radius: "1"}, circle)
 
-	circle, err = parseCircleString(CircleStringBadPoint)
+	circle, err = parseCircleString(testCircleStringBadPoint)
 	assert.NotNil(err)
 	assert.Equal(Circle{}, circle)
 
-	circle, err = parseCircleString(CircleStringNoPoint)
+	circle, err = parseCircleString(testCircleStringNoPoint)
 	assert.NotNil(err)
 	assert.Equal(Circle{}, circle)
 
-	circle, err = parseCircleString(CircleStringNoRadius)
+	circle, err = parseCircleString(testCircleStringNoRadius)
 	assert.NotNil(err)
 	assert.Equal(Circle{}, circle)
 }
@@ -324,89 +324,89 @@ func TestParseCircleString(t *testing.T) {
 func TestIsValidCircleString(t *testing.T) {
 	assert := assert.New(t)
 
-	assert.True(isValidCircleString(CircleStringValid))
-	assert.False(isValidCircleString(CircleStringBadPoint))
-	assert.False(isValidCircleString(CircleStringNoPoint))
-	assert.False(isValidCircleString(CircleStringNoRadius))
+	assert.True(isValidCircleString(testCircleStringValid))
+	assert.False(isValidCircleString(testCircleStringBadPoint))
+	assert.False(isValidCircleString(testCircleStringNoPoint))
+	assert.False(isValidCircleString(testCircleStringNoRadius))
 }
 
 func TestParseAddressesString(t *testing.T) {
 	assert := assert.New(t)
 	var addrs []string
 
-	addrs = parseAddressesString(AddressesStringValid)
+	addrs = parseAddressesString(testAddressesStringValid)
 	assert.Equal([]string{"one@example.com", "two@example.com"}, addrs)
 
-	addrs = parseAddressesString(AddressesStringEmpty)
+	addrs = parseAddressesString(testAddressesStringEmpty)
 	assert.Len(addrs, 0)
 }
 
 func TestIsValidAddressesString(t *testing.T) {
 	assert := assert.New(t)
-	assert.True(isValidAddressesString(AddressesStringValid))
-	assert.False(isValidAddressesString(AddressesStringEmpty))
+	assert.True(isValidAddressesString(testAddressesStringValid))
+	assert.False(isValidAddressesString(testAddressesStringEmpty))
 }
 
 func TestParseIncidentsString(t *testing.T) {
 	assert := assert.New(t)
 	var incidents []string
 
-	incidents = parseIncidentsString(IncidentsStringValid)
+	incidents = parseIncidentsString(testIncidentsStringValid)
 	assert.Equal([]string{"XXXX1", "XXXX2"}, incidents)
 
-	incidents = parseIncidentsString(IncidentsStringEmpty)
+	incidents = parseIncidentsString(testIncidentsStringEmpty)
 	assert.Len(incidents, 0)
 }
 
 func TestIsValidIncidentsString(t *testing.T) {
 	assert := assert.New(t)
-	assert.True(isValidIncidentsString(IncidentsStringValid))
-	assert.False(isValidIncidentsString(IncidentsStringEmpty))
+	assert.True(isValidIncidentsString(testIncidentsStringValid))
+	assert.False(isValidIncidentsString(testIncidentsStringEmpty))
 }
 
 func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
 	assert := assert.New(t)
 	var strs []string
 
-	strs = splitSpaceDelimitedQuotedStrings(SpaceDelimitedQuotedStringValid)
+	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid)
 	assert.Equal([]string{"hello world", "live", "goodbye world"}, strs)
 
-	strs = splitSpaceDelimitedQuotedStrings(SpaceDelimitedQuotedStringValid2)
+	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid2)
 	assert.Equal([]string{"one", "two", "three ... (3)", "four"}, strs)
 
-	strs = splitSpaceDelimitedQuotedStrings(SpaceDelimitedQuotedStringValid3)
+	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid3)
 	assert.Equal([]string{"one"}, strs)
 
-	strs = splitSpaceDelimitedQuotedStrings(SpaceDelimitedQuotedStringEmpty)
+	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringEmpty)
 	assert.Len(strs, 0)
 }
 
 func TestIsValidTimeString(t *testing.T) {
 	assert := assert.New(t)
-	assert.True(isValidTimeString(TimeStringValid))
-	assert.False(isValidTimeString(TimeStringBadZone))
+	assert.True(isValidTimeString(testTimeStringValid))
+	assert.False(isValidTimeString(testTimeStringBadZone))
 }
 
 func TestIsValidURLString(t *testing.T) {
 	assert := assert.New(t)
-	assert.True(isValidURLString(URLStringFullValid))
-	assert.True(isValidURLString(URLStringRelativeValid))
-	assert.False(isValidURLString(URLStringInvalid))
+	assert.True(isValidURLString(testURLStringFullValid))
+	assert.True(isValidURLString(testURLStringRelativeValid))
+	assert.False(isValidURLString(testURLStringInvalid))
 }
 
 func TestProcessAlertMessageXML(t *testing.T) {
 	assert := assert.New(t)
 	var err error
 
-	_, err = ProcessAlertMsgXML([]byte(HomelandSecurityAdvisorySystemAlert))
+	_, err = ProcessAlertMsgXML([]byte(testHomelandSecurityAdvisorySystemAlert))
 	assert.Nil(err)
 
-	_, err = ProcessAlertMsgXML([]byte(SevereThunderstormWarning))
+	_, err = ProcessAlertMsgXML([]byte(testSevereThunderstormWarning))
 	assert.Nil(err)
 
-	_, err = ProcessAlertMsgXML([]byte(EarthquakeReportUpdateMessage))
+	_, err = ProcessAlertMsgXML([]byte(testEarthquakeReportUpdateMessage))
 	assert.Nil(err)
 
-	_, err = ProcessAlertMsgXML([]byte(AmberAlertMultilingualMessage))
+	_, err = ProcessAlertMsgXML([]byte(testAmberAlertMultilingualMessage))
 	assert.Nil(err)
 }
