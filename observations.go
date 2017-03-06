@@ -47,38 +47,24 @@ type Observation struct {
 	VisibilityMi     string `xml:"visibility_mi"`
 }
 
-// observation is a private struct used to parse a single meteorological
-// observation into. The fields and XML mappings are based on
-// http://www.nws.noaa.gov/view/current_observation.xsd. Some available fields
-// are not included becuase they are outside the scope of this package.
-type observation struct {
-	// SuggestedPickup       string `xml:"suggested_pickup"`
-	// SuggestedPickupPeriod string `xml:"suggested_pickup_period"`
-	Location              string `xml:"location"`
-	StationId             string `xml:"station_id"`
-	Latitude              string `xml:"latitude"`
-	Longitude             string `xml:"longitude"`
-	Elevation             string `xml:"elevation"`
-	ObservationTimeRFC822 string `xml:"observation_time_rfc822"`
-	Weather               string `xml:"weather"`
-	TempF                 string `xml:"temp_f"`
-	TempC                 string `xml:"temp_c"`
-	RelativeHumidity      string `xml:"relative_humidity"`
-	WindDir               string `xml:"wind_dir"`
-	WindDegrees           string `xml:"wind_degrees"`
-	WindMph               string `xml:"wind_mph"`
-	WindKt                string `xml:"wind_kt"`
-	WindGustMph           string `xml:"wind_gust_mph"`
-	WindGustKt            string `xml:"wind_gust_kt"`
-	PressureMb            string `xml:"pressure_mb"`
-	PressureIn            string `xml:"pressure_in"`
-	DewpointF             string `xml:"dewpoint_f"`
-	DewpointC             string `xml:"dewpoint_c"`
-	HeatIndexF            string `xml:"heat_index_f"`
-	HeatIndexC            string `xml:"heat_index_c"`
-	WindchillF            string `xml:"windchill_f"`
-	WindchillC            string `xml:"windchill_c"`
-	VisibilityMi          string `xml:"visibility_mi"`
+// getCurrentObservation gets the most recent observation from a station and
+// returns a pointer to an Observation struct
+func getCurrentObservation(httpClient *http.Client, station string) (*Observation, error) {
+	// make the HTTP request and read resp.Body
+	resp, err := httpClient.Get(fmt.Sprintf(currentObservationsURLFmt, station))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("http response had status: %s", resp.Status)
+	}
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return newObservationFromXML(body)
 }
 
 // newObservationFromXML builds a new Observation from raw XML and returns it.
@@ -131,22 +117,36 @@ func newObservationFromXML(xmlBytes []byte) (*Observation, error) {
 	return ret, nil
 }
 
-// getCurrentObservation gets the most recent observation from a station and
-// returns a pointer to an Observation struct
-func getCurrentObservation(httpClient *http.Client, station string) (*Observation, error) {
-	// make the HTTP request and read resp.Body
-	resp, err := httpClient.Get(fmt.Sprintf(currentObservationsURLFmt, station))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("http response had status: %s", resp.Status)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return newObservationFromXML(body)
+// observation is a private struct used to parse a single meteorological
+// observation into. The fields and XML mappings are based on
+// http://www.nws.noaa.gov/view/current_observation.xsd. Some available fields
+// are not included becuase they are outside the scope of this package.
+type observation struct {
+	// SuggestedPickup       string `xml:"suggested_pickup"`
+	// SuggestedPickupPeriod string `xml:"suggested_pickup_period"`
+	Location              string `xml:"location"`
+	StationId             string `xml:"station_id"`
+	Latitude              string `xml:"latitude"`
+	Longitude             string `xml:"longitude"`
+	Elevation             string `xml:"elevation"`
+	ObservationTimeRFC822 string `xml:"observation_time_rfc822"`
+	Weather               string `xml:"weather"`
+	TempF                 string `xml:"temp_f"`
+	TempC                 string `xml:"temp_c"`
+	RelativeHumidity      string `xml:"relative_humidity"`
+	WindDir               string `xml:"wind_dir"`
+	WindDegrees           string `xml:"wind_degrees"`
+	WindMph               string `xml:"wind_mph"`
+	WindKt                string `xml:"wind_kt"`
+	WindGustMph           string `xml:"wind_gust_mph"`
+	WindGustKt            string `xml:"wind_gust_kt"`
+	PressureMb            string `xml:"pressure_mb"`
+	PressureIn            string `xml:"pressure_in"`
+	DewpointF             string `xml:"dewpoint_f"`
+	DewpointC             string `xml:"dewpoint_c"`
+	HeatIndexF            string `xml:"heat_index_f"`
+	HeatIndexC            string `xml:"heat_index_c"`
+	WindchillF            string `xml:"windchill_f"`
+	WindchillC            string `xml:"windchill_c"`
+	VisibilityMi          string `xml:"visibility_mi"`
 }

@@ -919,6 +919,238 @@ margin-top:250px;
 	<copyright_url>http://weather.gov/disclaimer.html</copyright_url>
 	<privacy_policy_url>http://weather.gov/notice.html</privacy_policy_url>
 </current_observation>`
+
+	alertsFeedNoAlerts = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+
+	<!--
+	This atom/xml feed is an index to active advisories, watches and warnings
+	issued by the National Weather Service.  This index file is not the complete
+	Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP
+	alert, please follow the links for each entry in this index.  Also note the
+	CAP message uses a style sheet to convey the information in a human readable
+	format.  Please view the source of the CAP message to see the complete data
+	set.  Not all information in the CAP message is contained in this index of
+	active alerts.
+	-->
+
+	<feed
+	xmlns = 'http://www.w3.org/2005/Atom'
+	xmlns:cap = 'urn:oasis:names:tc:emergency:cap:1.1'
+	xmlns:ha = 'http://www.alerting.net/namespace/index_1.0'
+	>
+
+	<!-- TZN = <> -->
+	<!-- TZO = <> -->
+	<!-- http-date = Mon, 03 Mar 2017 15:39:19 GMT -->
+	<id>https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0</id>
+	<generator>NWS CAP Server</generator>
+	<updated>2017-03-06T15:39:19+00:00</updated>
+	<author>
+	<name>w-nws.webmaster@noaa.gov</name>
+	</author>
+	<title>Current Watches, Warnings and Advisories for Greater Portland Metro Area (ORZ006) Oregon Issued by the National Weather Service</title>
+	<link href='https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0'/>
+
+	    <entry>
+	    <id>https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0</id>
+	    <updated>2017-03-06T15:39:19+00:00</updated>
+	    <author>
+	    <name>w-nws.webmaster@noaa.gov</name>
+	    </author>
+	    <title>There are no active watches, warnings or advisories</title>
+	    <link href='https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0'/>
+	    </entry>
+	    </feed>`
+
+	alertsFeed = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<feed
+xmlns = 'http://www.w3.org/2005/Atom'
+xmlns:cap = 'urn:oasis:names:tc:emergency:cap:1.1'
+xmlns:ha = 'http://www.alerting.net/namespace/index_1.0'
+>
+
+<!-- TZN = <> -->
+<!-- TZO = <> -->
+<!-- http-date = Fri, 03 Mar 2017 21:34:46 GMT -->
+<id>https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0</id>
+<generator>NWS CAP Server</generator>
+<updated>2017-03-03T21:34:46+00:00</updated>
+<author>
+<name>w-nws.webmaster@noaa.gov</name>
+</author>
+<title>Current Watches, Warnings and Advisories for Greater Portland Metro Area (ORZ006) Oregon Issued by the National Weather Service</title>
+<link href='https://alerts.weather.gov/cap/wwaatmget.php?x=ORZ006&amp;y=0'/>
+
+<entry>
+<id>https://alerts.weather.gov/cap/wwacapget.php?x=OR125843EE9C6C.SpecialWeatherStatement.125843FBD6C0OR.PDTSPSPDT.af3c363d42ff38a82ce91ac0599b12e0</id>
+<updated>2017-03-06T05:31:00-08:00</updated>
+<published>2017-03-06T05:31:00-08:00</published>
+<author>
+<name>w-nws.webmaster@noaa.gov</name>
+</author>
+<title>Special Weather Statement issued March 06 at 5:31AM PST until March 06 at 4:00PM PST by NWS</title>
+<link href="https://alerts.weather.gov/cap/wwacapget.php?x=OR125843EE9C6C.SpecialWeatherStatement.125843FBD6C0OR.PDTSPSPDT.af3c363d42ff38a82ce91ac0599b12e0"/>
+<summary>...Numerous Snow Showers Today and Tonight... ....Another Round of Snow Expected Tuesday and Tuesday Night... A cold, unstable northwest flow pattern will continue today and tonight. A weather disturbance will also be moving through the area during this time. Numerous to widespread snow showers are expected to develop this morning or early afternoon. Some of the</summary>
+<cap:event>Special Weather Statement</cap:event>
+<cap:effective>2017-03-06T05:31:00-08:00</cap:effective>
+<cap:expires>2017-03-06T16:00:00-08:00</cap:expires>
+<cap:status>Actual</cap:status>
+<cap:msgType>Alert</cap:msgType>
+<cap:category>Met</cap:category>
+<cap:urgency>Expected</cap:urgency>
+<cap:severity>Minor</cap:severity>
+<cap:certainty>Observed</cap:certainty>
+<cap:areaDesc>Grande Ronde Valley; Northern Blue Mountains of Oregon; Wallowa County</cap:areaDesc>
+<cap:polygon></cap:polygon>
+<cap:geocode>
+<valueName>FIPS6</valueName>
+<value>041059 041061 041063</value>
+<valueName>UGC</valueName>
+<value>ORZ049 ORZ050 ORZ502</value>
+</cap:geocode>
+<cap:parameter>
+<valueName>VTEC</valueName>
+<value></value>
+</cap:parameter>
+</entry>
+
+</feed>`
+
+	alert = `
+<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings 
+issued by the National Weather Service.  This index file is not the complete 
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP 
+alert, please follow the links for each entry in this index.  Also note the 
+CAP message uses a style sheet to convey the information in a human readable 
+format.  Please view the source of the CAP message to see the complete data 
+set.  Not all information in the CAP message is contained in this index of 
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Mon, 06 Mar 2017 01:31:00 GMT -->
+<identifier>NOAA-NWS-ALERTS-OR125843EE9C6C.SpecialWeatherStatement.125843FBD6C0OR.PDTSPSPDT.af3c363d42ff38a82ce91ac0599b12e0</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2017-03-06T05:31:00-08:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for Grande Ronde Valley; Northern Blue Mountains of Oregon; Wallowa County (Oregon) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Special Weather Statement</event>
+<urgency>Expected</urgency>
+<severity>Minor</severity>
+<certainty>Observed</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value>SPS</value>
+</eventCode>
+<effective>2017-03-06T05:31:00-08:00</effective>
+<expires>2017-03-06T16:00:00-08:00</expires>
+<senderName>NWS Pendleton (Northeast Oregon and Southeast Washington)</senderName>
+<headline>Special Weather Statement issued March 06 at 5:31AM PST until March 06 at 4:00PM PST by NWS Pendleton</headline>
+<description>...Numerous Snow Showers Today and Tonight...
+....Another Round of Snow Expected Tuesday and Tuesday Night...
+A cold, unstable northwest flow pattern will continue today and
+tonight. A weather disturbance will also be moving through the
+area during this time. Numerous to widespread snow showers are
+expected to develop this morning or early afternoon. Some of the
+snow showers could be heavy at times, creating snow covered roads
+and limited visibility. Snow accumulations for today and tonight
+are expected to range from 1 to 3 inches in the Simcoe
+Highlands, Central Oregon, Ochoco John Day Highlands, Southern
+Blue Mountains, Grande Ronde Valley and Wallowa Valley. Expect
+higher amounts, between 2 to 5 inches along the East Slopes of the
+Washington Cascades and in the Northern Blue Mountains.
+Expect a brief lull in the snow shower activity late this evening
+and into the first part of tonight. Then, the next storm system
+will move into the area for Tuesday, Tuesday night and Wednesday
+morning. This storm system will have more moisture to work with
+and therefore am expecting widespread steady snow for the area
+mountains. Snow levels will be rising Tuesday afternoon and
+evening...reaching 4500 to 5000 feet over Central Oregon...4000
+feet over Northeast Oregon and 2000 to 2500 feet in Southern
+Washington. Preliminary additional snowfall totals for Tuesday
+through Wednesday morning are expected to range from less than 1
+inch in Central Oregon...1 to 2 inches in the Grande Ronde Valley
+and Ochoco John Day Highlands...2 to 5 inches in the Simcoe
+Highlands, Southern Blue Mountains and much of Wallowa County.
+Expect much higher amounts between 6 to 13 inches for the East
+Slopes of the Washington Cascades and the Northern Blue
+Mountains where a winter storm watch is in effect. The
+precipitation should gradually taper off and end for most
+locations by late Tuesday night or Wednesday morning.
+Those planning on traveling over mountain passes or doing
+activities in the mountains should plan and prepare for these
+significant snow accumulations. This is a complex late winter
+weather pattern. Additional winter weather highlights may be
+needed. Please check back for the latest forecast updates.</description>
+<instruction></instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>ORZ049-050-502-503-506-509-511-WAZ030-520-521</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>Grande Ronde Valley; Northern Blue Mountains of Oregon; Wallowa County</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>041059</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>041061</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>041063</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>ORZ049</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>ORZ050</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>ORZ502</value>
+</geocode>
+</area>
+</info>
+</alert>
+`
 )
 
 func RegisterResponders() {
@@ -934,9 +1166,41 @@ func RegisterResponders() {
 			return httpmock.NewStringResponse(200, ""), nil
 		},
 	)
+
 	// Observation
 	httpmock.RegisterResponder("GET",
 		"http://w1.weather.gov/xml/current_obs/KPDX.xml",
 		httpmock.NewStringResponder(200, observation),
 	)
+
+	// Alerts Feed
+	httpmock.RegisterResponder("GET",
+		"https://alerts.weather.gov/cap/wwaatmget.php",
+		func(req *http.Request) (*http.Response, error) {
+			if req.URL.Query().Get("x") == "ORZ006NoAlerts" && req.URL.Query().Get("y") == "0" {
+				return httpmock.NewStringResponse(200, alertsFeedNoAlerts), nil
+			}
+			if req.URL.Query().Get("x") == "ORZ006" && req.URL.Query().Get("y") == "0" {
+				return httpmock.NewStringResponse(200, alertsFeed), nil
+			}
+			// Annoyingly, the NWS website returns 200 if parameters are bad.
+			// The body in this case doesn't matter so is an empty string.
+			return httpmock.NewStringResponse(200, ""), nil
+		},
+	)
+
+	// Alert
+	httpmock.RegisterResponder("GET",
+		"https://alerts.weather.gov/cap/wwacapget.php",
+		func(req *http.Request) (*http.Response, error) {
+			if req.URL.Query().Get("x") == "OR125843EE9C6C.SpecialWeatherStatement.125843FBD6C0OR.PDTSPSPDT.af3c363d42ff38a82ce91ac0599b12e0" {
+				return httpmock.NewStringResponse(200, alert), nil
+			}
+			// TODO: bad parameters return an alert document indicating that the
+			// alert has expired. Handle that.
+			return httpmock.NewStringResponse(200, ""), nil
+		},
+	)
+
+	// https://alerts.weather.gov/cap/wwacapget.php?x=OR125843EE9C6C.SpecialWeatherStatement.125843FBD6C0OR.PDTSPSPDT.af3c363d42ff38a82ce91ac0599b12e0
 }

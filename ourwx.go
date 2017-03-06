@@ -14,11 +14,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	"github.com/mikecamilleri/ouralerts"
 )
 
 const (
 	htmlForecastURLFmt = "http://forecast.weather.gov/MapClick.php?lat=%s&lon=%s"
-	// alertByZoneURLFmt = "https://alerts.weather.gov/cap/wwaatmget.php?x=%s&y=0"
 )
 
 // Client is a client that is used to retrieve data from several NWS APIs. Each
@@ -72,6 +73,11 @@ func (c *Client) CurrentObservation() (*Observation, error) {
 	// TODO: store the most recent observation in the Client and avoid making
 	// API requests too ofton.
 	return getCurrentObservation(c.httpClient, c.station)
+}
+
+// CurrentAlerts returns the current alerts at the Client's location.
+func (c *Client) CurrentAlerts() ([]*ouralerts.Alert, error) {
+	return getAlerts(c.httpClient, c.zone)
 }
 
 func (c *Client) setZoneAndStationFromCoordinates() error {

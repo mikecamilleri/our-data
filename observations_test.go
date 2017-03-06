@@ -51,7 +51,7 @@ func TestGetCurrentObservation(t *testing.T) {
 	mock.RegisterResponders()
 
 	c := &http.Client{}
-	obs, err := getCurrentObservation(c, "KPDX")
+	obs, err := getCurrentObservation(c, testStation)
 
 	require.Nil(t, err)
 	require.Equal(t, *obs, parsedTestObservation)

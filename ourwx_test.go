@@ -12,10 +12,11 @@ import (
 )
 
 const (
-	testLat     = "45.53"
-	testLon     = "-122.67"
-	testZone    = "ORZ006"
-	testStation = "KPDX"
+	testLat          = "45.53"
+	testLon          = "-122.67"
+	testZone         = "ORZ006"
+	testZoneNoAlerts = "ORZ006NoAlerts"
+	testStation      = "KPDX"
 )
 
 func TestNewClient(t *testing.T) {
@@ -61,7 +62,21 @@ func TestCurrentObservation(t *testing.T) {
 
 	require.Nil(t, err)
 	assert.Equal(t, &parsedTestObservation, o)
+}
 
+func TestCurrentAlerts(t *testing.T) {
+	httpmock.Activate()
+	defer httpmock.DeactivateAndReset()
+	mock.RegisterResponders()
+
+	c := &Client{
+		httpClient: &http.Client{},
+		zone:       testZone,
+	}
+	a, err := c.CurrentAlerts()
+
+	assert.Nil(t, err)
+	assert.Len(t, a, 1)
 }
 
 func TestValidate(t *testing.T) {
