@@ -2,6 +2,14 @@
 	Package ouralerts implements the ability to parse and validate OASIS Common
 	Alerting Protocol Alert Messages
 */
+
+/*
+	func ValidateMessageXML(messageXML []byte) error {}
+	func ProcessMessageXML(messageXML []byte) (*Alert, error) {}
+
+	Unmarshall using charset reader to support non-UTF-8?
+*/
+
 package ouralerts
 
 import (
@@ -21,9 +29,9 @@ const (
 
 var (
 	XMLNamespaces = map[string]string{
-		"urn:oasis:names:tc:emergency:cap:1.2": "1.2",
-		"urn:oasis:names:tc:emergency:cap:1.1": "1.1",
-		// "urn:oasis:names:tc:emergency:cap:1.0": "1.0",
+		"1.2": "urn:oasis:names:tc:emergency:cap:1.2",
+		"1.1": "urn:oasis:names:tc:emergency:cap:1.1",
+		"1.0": "urn:oasis:names:tc:emergency:cap:1.0",
 	}
 	AlertStatuses = map[string]string{
 		"Actual":   "Actionable by all targeted recipients",
@@ -120,7 +128,7 @@ type Info struct {
 	Severity      string
 	Certainty     string
 	Audience      string
-	EventCodes    []NamedValue
+	EventCodes    url.Values
 	Effective     time.Time
 	Onset         time.Time
 	Expires       time.Time
@@ -130,7 +138,7 @@ type Info struct {
 	Instruction   string
 	Web           *url.URL
 	Contact       string
-	Parameters    []NamedValue
+	Parameters    url.Values
 	Resources     []Resource
 	Areas         []Area
 }
@@ -139,7 +147,7 @@ type Info struct {
 type Resource struct {
 	ResourceDesc string
 	MIMEType     string
-	Size         int // approximate size in bytes
+	Size         int64 // approximate size in bytes
 	URI          *url.URL
 	DerefURI     string // base-64 encoded binary
 	Digest       string // SHA-1 hash
@@ -150,9 +158,9 @@ type Area struct {
 	AreaDesc string
 	Polygons []Polygon
 	Circles  []Circle
-	Geocodes []NamedValue
-	Altitude string // feet above mean sea level
-	Ceiling  string // feet above mean sea level
+	Geocodes url.Values
+	Altitude float64 // feet above mean sea level
+	Ceiling  float64 // feet above mean sea level
 }
 
 // Reference holds a reference to another alert
@@ -162,49 +170,50 @@ type Reference struct {
 	Sent       time.Time
 }
 
-// NamedValue
-// TODO: replace with url.Values
-type NamedValue struct {
-	ValueName string
-	Value     string
-}
-
 // Polygon defines a polygonal area
 type Polygon []Point
 
 // Circle defines a circular area
 type Circle struct {
 	Point  Point
-	Radius string // kilometers
+	Radius float64 // kilometers
 }
 
 // Point defines a WGS 84 coordinate point on the earth
 type Point struct {
-	Latitude  string
-	Longitude string
+	Latitude  float64
+	Longitude float64
 }
 
-// ProcessAlertMsgXML takes an XML CAP alert message and returns an Alert struct
-func ProcessAlertMsgXML(alertMsgXML []byte) (*Alert, error) {
+// ValidateMessageXML validates an XML CAP alert message
+func ValidateMessageXML(messageXML []byte) error {
 	a := &alert{}
-	if err := xml.Unmarshal(alertMsgXML, a); err != nil {
-		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	if err := xml.Unmarshal(messageXML, a); err != nil {
+		return fmt.Errorf("error unmarshalling alert message XML: %s", err)
 	}
 	if err := a.validate(); err != nil {
-		return nil, fmt.Errorf("error(s) validating alert: %s", err)
+		return fmt.Errorf("error(s) validating alert message: %s", err)
 	}
-	processed, err := a.convert()
-	if err != nil {
-		return nil, fmt.Errorf("error(s) converting alert: %s", err)
-	}
-
-	return processed, nil
+	return nil
 }
 
-// alert is an unexported struct used internally for unmarshalling a CAP alert
-// message
+// ProcessMessageXML takes an XML CAP alert message and returns an Alert struct
+func ProcessMessageXML(messageXML []byte) (*Alert, error) {
+	a := &alert{}
+	if err := xml.Unmarshal(messageXML, a); err != nil {
+		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	}
+	converted, err := a.convert()
+	if err != nil {
+		return nil, fmt.Errorf("error(s) converting message to exported Alert struct: %s", err)
+	}
+	return converted, nil
+}
+
+// alert is used internally for unmarshalling a CAP alert message
 type alert struct {
 	// TODO: add namespace support to distiguish CAP versions
+	XMLNS       string   `xml:"xmlns,attr"`
 	Identifier  string   `xml:"identifier"`
 	Sender      string   `xml:"sender"`
 	Sent        string   `xml:"sent"`
@@ -268,10 +277,13 @@ type alert struct {
 
 // validate validates that the content of an alert struct conforms to the CAP
 // 1.2 specification
-// TODO: implement validation for CAP 1.1 and 1.0
 func (a *alert) validate() error {
 	var errStrs []string
 	var missingElements []string
+
+	if a.XMLNS != XMLNamespaces["1.2"] {
+		errStrs = append(errStrs, fmt.Sprintf("XML namepace is %s, this validater is designed for %s", a.XMLNS, XMLNamespaces["1.2"]))
+	}
 
 	if len(a.Identifier) == 0 {
 		missingElements = append(missingElements, "alert.identifier")
@@ -315,22 +327,16 @@ func (a *alert) validate() error {
 		errStrs = append(errStrs, "if alert.scope is Private must have alert.addresses")
 	}
 
-	if len(a.Addresses) > 0 {
-		if !isValidAddressesString(a.Addresses) {
-			errStrs = append(errStrs, "invalid alert.addresses")
-		}
+	if len(a.Addresses) > 0 && !isValidAddressesString(a.Addresses) {
+		errStrs = append(errStrs, "invalid alert.addresses")
 	}
 
-	if len(a.References) > 0 {
-		if !isValidReferencesString(a.References) {
-			errStrs = append(errStrs, "invalid alert.info[%d].area[%d].circle[%d]")
-		}
+	if len(a.References) > 0 && !isValidReferencesString(a.References) {
+		errStrs = append(errStrs, "invalid alert.references")
 	}
 
-	if len(a.Incidents) > 0 {
-		if !isValidIncidentsString(a.Incidents) {
-			errStrs = append(errStrs, "invalid alert.incidents")
-		}
+	if len(a.Incidents) > 0 && !isValidIncidentsString(a.Incidents) {
+		errStrs = append(errStrs, "invalid alert.incidents")
 	}
 
 	for i, info := range a.Infos {
@@ -339,7 +345,7 @@ func (a *alert) validate() error {
 		} else {
 			for j, cat := range info.Categories {
 				if _, ok := AlertInfoCategories[cat]; !ok {
-					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info.category[%d]", j))
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].category[%d]", i, j))
 				}
 			}
 		}
@@ -348,44 +354,44 @@ func (a *alert) validate() error {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].event", i))
 		}
 
-		for i, respType := range info.ResponseTypes {
+		for j, respType := range info.ResponseTypes {
 			if _, ok := AlertInfoResponseTypes[respType]; !ok {
-				errStrs = append(errStrs, fmt.Sprintf("invalid alert.info.responseType[%d]", i))
+				errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].responseType[%d]", i, j))
 			}
 		}
 
 		if len(info.Urgency) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].urgency", i))
 		} else if _, ok := AlertInfoUrgencies[info.Urgency]; !ok {
-			errStrs = append(errStrs, "invalid alert.info.urgency")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].urgency", i))
 		}
 
 		if len(info.Severity) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].severity", i))
 		} else if _, ok := AlertInfoSeverities[info.Severity]; !ok {
-			errStrs = append(errStrs, "invalid alert.info.severity")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].severity", i))
 		}
 
 		if len(info.Certainty) == 0 {
 			missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].certainty", i))
 		} else if _, ok := AlertInfoCertainties[info.Certainty]; !ok {
-			errStrs = append(errStrs, "invalid alert.info.certainty")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].certainty", i))
 		}
 
 		if len(info.Effective) > 0 && !isValidTimeString(info.Effective) {
-			errStrs = append(errStrs, "invalid alert.info.effective time")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].effective time", i))
 		}
 
 		if len(info.Onset) > 0 && !isValidTimeString(info.Onset) {
-			errStrs = append(errStrs, "invalid alert.info.onset time")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].onset time", i))
 		}
 
 		if len(info.Expires) > 0 && !isValidTimeString(info.Expires) {
-			errStrs = append(errStrs, "invalid alert.info.expires time")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].expires time", i))
 		}
 
 		if len(info.Web) > 0 && !isValidURLString(info.Web) {
-			errStrs = append(errStrs, "invalid alert.info.web URL")
+			errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].web URL", i))
 		}
 
 		for j, resource := range info.Resources {
@@ -398,46 +404,26 @@ func (a *alert) validate() error {
 			}
 
 			if len(resource.Size) > 0 {
-				if size, err := strconv.Atoi(resource.Size); err != nil || size < 0 {
-					errStrs = append(errStrs, "invalid alert.info.resource.size")
+				if _, err := strconv.ParseInt(resource.Size, 10, 64); err != nil {
+					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].resource[%d].size", i, j))
 				}
 			}
 
 			if len(resource.URI) > 0 && !isValidURLString(resource.URI) {
-				errStrs = append(errStrs, "invalid alert.info.resource.uri URL")
-			}
-
-			if !(len(resource.URI) > 0 || len(resource.DerefURI) > 0) {
-				errStrs = append(errStrs, "invalid alert.info.resource.uri URL")
+				errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].resource[%d].uri URL", i, j))
 			}
 		}
 
 		for j, area := range info.Areas {
 			if len(area.AreaDesc) == 0 {
-				missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].area[%d] must have uri or derefUri", i, j))
+				missingElements = append(missingElements, fmt.Sprintf("alert.info[%d].area[%d].areaDesc", i, j))
 			}
-			// TODO: this is a sloppy hack to deal with empty fields. Need to
-			// implement a better approach
-			deleted := 0
 			for k, p := range area.Polygons {
-				if len(p) == 0 {
-					kd := k - deleted
-					a.Infos[i].Areas[j].Polygons = append(a.Infos[i].Areas[j].Polygons[:kd], a.Infos[i].Areas[j].Polygons[kd+1:]...)
-					deleted++
-					continue
-				}
 				if !isValidPolygonString(p) {
 					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].polygon[%d]", i, j, k))
 				}
 			}
-			deleted = 0
 			for k, c := range area.Circles {
-				if len(c) == 0 {
-					kd := k - deleted
-					a.Infos[i].Areas[j].Circles = append(a.Infos[i].Areas[j].Circles[:kd], a.Infos[i].Areas[j].Circles[kd+1:]...)
-					deleted++
-					continue
-				}
 				if !isValidCircleString(c) {
 					errStrs = append(errStrs, fmt.Sprintf("invalid alert.info[%d].area[%d].circle[%d]", i, j, k))
 				}
@@ -455,36 +441,24 @@ func (a *alert) validate() error {
 	return nil
 }
 
-// convert converts an unexported `alert` to an exported `Alert`
+// convert converts an unexported `alert` to an exported `Alert`. An effort is
+// made to convert invalid messages and fields.
 func (a *alert) convert() (*Alert, error) {
 	var ret Alert // the Alert to be returned
-	var err error
 
 	ret.Identifier = a.Identifier
 	ret.Sender = a.Sender
-	if len(a.Sent) > 0 {
-		if ret.Sent, err = time.Parse(timeFormat, a.Sent); err != nil {
-			return nil, err
-		}
-	}
+	ret.Sent, _ = parseTimeString(a.Sent)
 	ret.Status = a.Status
 	ret.MsgType = a.MsgType
 	ret.Source = a.Source
 	ret.Scope = a.Scope
 	ret.Restriction = a.Restriction
-	if len(a.Addresses) > 0 {
-		ret.Addresses = parseAddressesString(a.Addresses)
-	}
-	ret.Codes = a.Codes
+	ret.Addresses, _ = parseAddressesString(a.Addresses)
+	ret.Codes = removeEmptyStringsFromSlice(a.Codes)
 	ret.Note = a.Note
-	if len(a.References) > 0 {
-		if ret.References, err = parseReferencesString(a.References); err != nil {
-			return nil, err
-		}
-	}
-	if len(a.Incidents) > 0 {
-		ret.Incidents = parseIncidentsString(a.Incidents)
-	}
+	ret.References, _ = parseReferencesString(a.References)
+	ret.Incidents, _ = parseIncidentsString(a.Incidents)
 
 	for _, aInfo := range a.Infos {
 		var retInfo Info
@@ -495,43 +469,41 @@ func (a *alert) convert() (*Alert, error) {
 		} else {
 			retInfo.Language = aInfo.Language
 		}
-		retInfo.Categories = aInfo.Categories
+
+		retInfo.Categories = removeEmptyStringsFromSlice(aInfo.Categories)
 		retInfo.Event = aInfo.Event
-		retInfo.ResponseTypes = aInfo.ResponseTypes
+		retInfo.ResponseTypes = removeEmptyStringsFromSlice(aInfo.ResponseTypes)
 		retInfo.Urgency = aInfo.Urgency
 		retInfo.Severity = aInfo.Severity
 		retInfo.Certainty = aInfo.Certainty
 		retInfo.Audience = aInfo.Audience
+
 		for _, ec := range aInfo.EventCodes {
-			retInfo.EventCodes = append(retInfo.EventCodes, NamedValue{ValueName: ec.ValueName, Value: ec.Value})
-		}
-		if len(aInfo.Effective) > 0 {
-			if retInfo.Effective, err = time.Parse(timeFormat, aInfo.Effective); err != nil {
-				return nil, err
+			if len(ec.ValueName) > 0 {
+				if retInfo.EventCodes == nil {
+					retInfo.EventCodes = make(url.Values)
+				}
+				retInfo.EventCodes.Add(ec.ValueName, ec.Value)
 			}
 		}
-		if len(aInfo.Onset) > 0 {
-			if retInfo.Onset, err = time.Parse(timeFormat, aInfo.Onset); err != nil {
-				return nil, err
-			}
-		}
-		if len(aInfo.Expires) > 0 {
-			if retInfo.Expires, err = time.Parse(timeFormat, aInfo.Expires); err != nil {
-				return nil, err
-			}
-		}
+
+		retInfo.Effective, _ = parseTimeString(aInfo.Effective)
+		retInfo.Onset, _ = parseTimeString(aInfo.Onset)
+		retInfo.Expires, _ = parseTimeString(aInfo.Expires)
 		retInfo.SenderName = aInfo.SenderName
 		retInfo.Headline = aInfo.Headline
 		retInfo.Description = aInfo.Description
 		retInfo.Instruction = aInfo.Instruction
-		if len(aInfo.Web) > 0 {
-			if retInfo.Web, err = url.Parse(aInfo.Web); err != nil {
-				return nil, err
-			}
-		}
+		retInfo.Web, _ = parseURLString(aInfo.Web)
 		retInfo.Contact = aInfo.Contact
+
 		for _, p := range aInfo.Parameters {
-			retInfo.Parameters = append(retInfo.Parameters, NamedValue{ValueName: p.ValueName, Value: p.Value})
+			if len(p.ValueName) > 0 {
+				if retInfo.Parameters == nil {
+					retInfo.Parameters = make(url.Values)
+				}
+				retInfo.Parameters.Add(p.ValueName, p.Value)
+			}
 		}
 
 		for _, aiResource := range aInfo.Resources {
@@ -539,17 +511,9 @@ func (a *alert) convert() (*Alert, error) {
 
 			retResource.ResourceDesc = aiResource.ResourceDesc
 			retResource.MIMEType = aiResource.MIMEType
-			if len(aiResource.Size) > 0 {
-				if retResource.Size, err = strconv.Atoi(aiResource.Size); err != nil {
-					return nil, err
-				}
-			}
-			if len(aiResource.URI) > 0 {
-				if retResource.URI, err = url.Parse(aiResource.URI); err != nil {
-					return nil, err
-				}
-			}
-			retResource.DerefURI = aiResource.Digest
+			retResource.Size, _ = strconv.ParseInt(aiResource.Size, 10, 64)
+			retResource.URI, _ = parseURLString(aiResource.URI)
+			retResource.DerefURI = aiResource.DerefURI
 			retResource.Digest = aiResource.Digest
 
 			retInfo.Resources = append(retInfo.Resources, retResource)
@@ -560,24 +524,27 @@ func (a *alert) convert() (*Alert, error) {
 
 			retArea.AreaDesc = aiArea.AreaDesc
 			for _, p := range aiArea.Polygons {
-				if parsed, err := parsePolygonString(p); err != nil {
-					return nil, err
-				} else {
+				if parsed, err := parsePolygonString(p); err == nil {
 					retArea.Polygons = append(retArea.Polygons, parsed)
 				}
 			}
 			for _, c := range aiArea.Circles {
-				if parsed, err := parseCircleString(c); err != nil {
-					return nil, err
-				} else {
+				if parsed, err := parseCircleString(c); err == nil {
 					retArea.Circles = append(retArea.Circles, parsed)
 				}
 			}
+
 			for _, g := range aiArea.Geocodes {
-				retArea.Geocodes = append(retArea.Geocodes, NamedValue{ValueName: g.ValueName, Value: g.Value})
+				if len(g.ValueName) > 0 {
+					if retArea.Geocodes == nil {
+						retArea.Geocodes = make(url.Values)
+					}
+					retArea.Geocodes.Add(g.ValueName, g.Value)
+				}
 			}
-			retArea.Altitude = aiArea.Altitude
-			retArea.Ceiling = aiArea.Ceiling
+
+			retArea.Altitude, _ = strconv.ParseFloat(aiArea.Altitude, 64)
+			retArea.Ceiling, _ = strconv.ParseFloat(aiArea.Ceiling, 64)
 
 			retInfo.Areas = append(retInfo.Areas, retArea)
 		}
@@ -588,124 +555,49 @@ func (a *alert) convert() (*Alert, error) {
 	return &ret, nil
 }
 
-// parseReferencesString parses a references string
-func parseReferencesString(referencesString string) ([]Reference, error) {
-	if len(referencesString) == 0 {
-		return nil, errors.New("referencesString is empty")
-	}
-	refStrings := strings.Fields(referencesString)
-	var refs []Reference
-	for _, rs := range refStrings {
-		parts := strings.Split(rs, ",")
-		if len(parts) != 3 {
-			return nil, errors.New("reference must contain three parts")
+// removeEmptyStringsFromSlice returns a slice of strings that is the imput
+// slice with the empty values removed, or nil if empty
+func removeEmptyStringsFromSlice(sliceOfStrings []string) []string {
+	var out []string
+	for _, s := range sliceOfStrings {
+		if len(s) > 0 {
+			out = append(out, s)
 		}
-		t, err := time.Parse(timeFormat, parts[2])
-		if err != nil {
-			return nil, errors.New("invalid time string")
-		}
-		refs = append(refs, Reference{Sender: parts[0], Identifier: parts[1], Sent: t})
 	}
-	return refs, nil
-}
-
-// isValidReferencesString tests whether a references string is valid
-func isValidReferencesString(referenceString string) bool {
-	if _, err := parseReferencesString(referenceString); err != nil {
-		return false
-	}
-	return true
-}
-
-// parsePolygonString parses a polygon string
-func parsePolygonString(polygonString string) (Polygon, error) {
-	if len(polygonString) == 0 {
-		return nil, errors.New("polygonsString is empty")
-	}
-	pointStrings := strings.Fields(polygonString)
-	if len(pointStrings) < 4 {
-		return nil, errors.New("a polygon must contain at least four points")
-	}
-	var poly Polygon
-	for _, ps := range pointStrings {
-		vals := strings.Split(ps, ",")
-		if len(vals) != 2 {
-			return nil, errors.New("point must contain exactly two values")
-		}
-		poly = append(poly, Point{Latitude: vals[0], Longitude: vals[1]})
-	}
-	if poly[0] != poly[len(poly)-1] {
-		return nil, errors.New("first and last points must be equal")
-	}
-	return poly, nil
-}
-
-// isValidPolygonString tests whether a polygon string is valid
-func isValidPolygonString(polygonString string) bool {
-	if _, err := parsePolygonString(polygonString); err != nil {
-		return false
-	}
-	return true
-}
-
-// parseCircleString
-func parseCircleString(circleString string) (Circle, error) {
-	var circle Circle
-	if len(circleString) == 0 {
-		return circle, errors.New("circleString is empty")
-	}
-	pointRadiusStrings := strings.Fields(circleString)
-	if len(pointRadiusStrings) != 2 {
-		return circle, errors.New("a circle must contain a central point and a radius")
-	}
-	psVals := strings.Split(pointRadiusStrings[0], ",")
-	if len(psVals) != 2 {
-		return circle, errors.New("central point must contain exactly two values")
-	}
-	circle.Point = Point{Latitude: psVals[0], Longitude: psVals[1]}
-	circle.Radius = pointRadiusStrings[1]
-	return circle, nil
-}
-
-// isValidCircleString tests whether a circle string is valid
-func isValidCircleString(circleString string) bool {
-	if _, err := parseCircleString(circleString); err != nil {
-		return false
-	}
-	return true
+	return out
 }
 
 // parseAddressesString parses an addresses string
-func parseAddressesString(addressesString string) []string {
+func parseAddressesString(addressesString string) ([]string, error) {
+	if !isValidAddressesString(addressesString) {
+		return nil, errors.New("error parsing addresses string")
+	}
 	return splitSpaceDelimitedQuotedStrings(addressesString)
 }
 
 // isValidAddressesString tests whether an addresses string is valid
 func isValidAddressesString(addressesString string) bool {
-	if len(parseAddressesString(addressesString)) == 0 {
-		return false
-	}
-	return true
+	return isValidSpaceDelimitedQuotedStrings(addressesString)
 }
 
 // parseIncidentsString parases an incidents string
-func parseIncidentsString(indidentsString string) []string {
-	return splitSpaceDelimitedQuotedStrings(indidentsString)
+func parseIncidentsString(incidentsString string) ([]string, error) {
+	if !isValidIncidentsString(incidentsString) {
+		return nil, errors.New("error parsing incidents string")
+	}
+	return splitSpaceDelimitedQuotedStrings(incidentsString)
 }
 
-// isValidIncidentsString tests whether an incidentas string is valid
+// isValidIncidentsString tests whether an incidents string is valid
 func isValidIncidentsString(incidentsString string) bool {
-	if len(parseIncidentsString(incidentsString)) == 0 {
-		return false
-	}
-	return true
+	return isValidSpaceDelimitedQuotedStrings(incidentsString)
 }
 
 // splitSpaceDelimitedQuotedStrings splits space delimited quoted strings into
 // a slice of strings
-func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []string {
-	if len(spaceDelimitedQuotedStrings) == 0 {
-		return nil
+func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) ([]string, error) {
+	if !isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings) {
+		return nil, errors.New("error splitting space delimited quoted string")
 	}
 	var fields []string
 	// we use strings.SplitAfter to retain multiple whitespace in quoted
@@ -737,20 +629,222 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) []stri
 			currField += word
 		}
 	}
-	return fields
+	return fields, nil
+}
+
+// isValidSpaceDelimitedQuotedStrings tests whether a SpaceDelimitedQuotedString
+// is valid
+func isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) bool {
+	if len(spaceDelimitedQuotedStrings) == 0 {
+		return false
+	}
+	if strings.Count(spaceDelimitedQuotedStrings, `"`)%2 != 0 {
+		return false
+	}
+	return true
+}
+
+// parseTimeString parses a time string
+func parseTimeString(timeString string) (time.Time, error) {
+	if !isValidTimeString(timeString) {
+		return time.Time{}, errors.New("error parsing time string")
+	}
+	t, err := time.Parse(timeFormat, timeString)
+	if err != nil {
+		return time.Time{}, errors.New("error parsing time string")
+	}
+	return t, nil
 }
 
 // isValidTimeString tests whether a time string is valid
 func isValidTimeString(timeString string) bool {
+	if len(timeString) == 0 {
+		return false
+	}
 	if _, err := time.Parse(timeFormat, timeString); err != nil {
 		return false
 	}
 	return true
 }
 
+// parseURLString parses a URL string
+func parseURLString(urlString string) (*url.URL, error) {
+	if !isValidURLString(urlString) {
+		return nil, errors.New("error parsing URL string")
+	}
+	url, err := url.Parse(urlString)
+	if err != nil {
+		return nil, errors.New("error parsing URL string")
+	}
+	return url, nil
+}
+
 // isValidURLString tests whether a URL string is valid
 func isValidURLString(urlString string) bool {
+	if len(urlString) == 0 {
+		return false
+	}
 	if _, err := url.Parse(urlString); err != nil {
+		return false
+	}
+	return true
+}
+
+// parseReferencesString parses a references string
+func parseReferencesString(referencesString string) ([]Reference, error) {
+	if !isValidReferencesString(referencesString) {
+		return nil, errors.New("error parsing references string")
+	}
+	refStrings := strings.Fields(referencesString)
+	var refs []Reference
+	for _, rs := range refStrings {
+		r, err := parseSingleReferenceString(rs)
+		if err != nil {
+			continue
+		}
+		refs = append(refs, r)
+	}
+	if len(refs) == 0 {
+		return nil, errors.New("error parsing references string")
+	}
+	return refs, nil
+}
+
+// isValidReferencesString tests whether a references string is valid
+func isValidReferencesString(referencesString string) bool {
+	if len(referencesString) == 0 {
+		return false
+	}
+	refStrings := strings.Fields(referencesString)
+	for _, rs := range refStrings {
+		if _, err := parseSingleReferenceString(rs); err != nil {
+			return false
+		}
+	}
+	return true
+}
+
+// parseSingleReferenceString parses a single reference string
+func parseSingleReferenceString(singleReferenceString string) (Reference, error) {
+	parts := strings.Split(singleReferenceString, ",")
+	if len(parts) != 3 {
+		return Reference{}, errors.New("reference must contain three parts")
+	}
+	t, err := parseTimeString(parts[2])
+	if err != nil {
+		return Reference{}, errors.New("invalid time string")
+	}
+	return Reference{Sender: parts[0], Identifier: parts[1], Sent: t}, nil
+}
+
+// parsePolygonString parses a polygon string
+func parsePolygonString(polygonString string) (Polygon, error) {
+	if !isValidPolygonString(polygonString) {
+		return Polygon{}, errors.New("error parsing polygon string")
+	}
+	var polygon Polygon
+	pointStrings := strings.Fields(polygonString)
+	for _, ps := range pointStrings {
+		vals := strings.Split(ps, ",")
+		var lat, lon float64
+		var err error
+		if lat, err = strconv.ParseFloat(vals[0], 64); err != nil {
+			return Polygon{}, errors.New("error parsing polygon string")
+		}
+		if lon, err = strconv.ParseFloat(vals[1], 64); err != nil {
+			return Polygon{}, errors.New("error parsing polygon string")
+		}
+		polygon = append(polygon, Point{lat, lon})
+	}
+	return polygon, nil
+}
+
+// isValidPolygonString tests whether a polygon string is valid
+func isValidPolygonString(polygonString string) bool {
+	if len(polygonString) == 0 {
+		return false
+	}
+	pointStrings := strings.Fields(polygonString)
+	// a polygon must contain at least four points
+	if len(pointStrings) < 4 {
+		return false
+	}
+	var polygon Polygon
+	for _, ps := range pointStrings {
+		vals := strings.Split(ps, ",")
+		// a point must contain exactly two values
+		if len(vals) != 2 {
+			return false
+		}
+		var lat, lon float64
+		var err error
+		if lat, err = strconv.ParseFloat(vals[0], 64); err != nil {
+			return false
+		}
+		if lon, err = strconv.ParseFloat(vals[1], 64); err != nil {
+			return false
+		}
+		polygon = append(polygon, Point{lat, lon})
+	}
+	// first and last points must be equal
+	if polygon[0] != polygon[len(polygon)-1] {
+		return false
+	}
+	return true
+}
+
+// parseCircleString parses a circle string
+func parseCircleString(circleString string) (Circle, error) {
+	if !isValidCircleString(circleString) {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	var circle Circle
+	var lat, lon, rad float64
+	var err error
+	pointRadiusStrings := strings.Fields(circleString)
+	if len(pointRadiusStrings) != 2 {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	pVals := strings.Split(pointRadiusStrings[0], ",")
+	if len(pVals) != 2 {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	if lat, err = strconv.ParseFloat(pVals[0], 64); err != nil {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	if lon, err = strconv.ParseFloat(pVals[1], 64); err != nil {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	if rad, err = strconv.ParseFloat(pointRadiusStrings[1], 64); err != nil {
+		return Circle{}, errors.New("error parsing circle string")
+	}
+	circle.Point = Point{Latitude: lat, Longitude: lon}
+	circle.Radius = rad
+	return circle, nil
+}
+
+// isValidCircleString tests whether a circle string is valid
+func isValidCircleString(circleString string) bool {
+	if len(circleString) == 0 {
+		return false
+	}
+	pointRadiusStrings := strings.Fields(circleString)
+	if len(pointRadiusStrings) != 2 {
+		// a circle must contain a central point and a radius
+		return false
+	}
+	pVals := strings.Split(pointRadiusStrings[0], ",")
+	if len(pVals) != 2 {
+		// central point must contain exactly two values
+		return false
+	}
+	if _, err := strconv.ParseFloat(pVals[0], 64); err != nil {
+		return false
+	}
+	if _, err := strconv.ParseFloat(pVals[1], 64); err != nil {
+		return false
+	}
+	if _, err := strconv.ParseFloat(pointRadiusStrings[1], 64); err != nil {
 		return false
 	}
 	return true
