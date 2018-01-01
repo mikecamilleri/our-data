@@ -2,6 +2,7 @@ package ouralerts
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -756,7 +757,8 @@ func TestValidateMessageXML(t *testing.T) {
 	assert.NotNil(err)
 }
 
-// TestProcessMessageXML tests that messages are processed as expected.
+// TestProcessMessageXML tests that messages are processed as expected. This
+// implicitely tests alert.convert()
 // TODO: Improve this test
 func TestProcessMessageXML(t *testing.T) {
 	assert := assert.New(t)
@@ -783,169 +785,200 @@ func TestProcessMessageXML(t *testing.T) {
 	assert.Nil(err)
 }
 
-// func TestParseReferencesString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var refs []Reference
-// 	var err error
+func TestRremoveEmptyStringsFromSlice(t *testing.T) {
 
-// 	refs, err = parseReferencesString(testReferencesStringValid)
-// 	assert.Nil(err)
-// 	assert.Len(refs, 2)
-// 	assert.Equal("user@example.com", refs[0].Sender)
-// 	assert.Equal("XX1122333", refs[0].Identifier)
-// 	tm, _ := time.Parse("2006-01-02T15:04:05-07:00", "2017-01-01T10:43:00-08:00")
-// 	assert.Equal(tm, refs[0].Sent)
+}
 
-// 	refs, err = parseReferencesString(testReferencesStringMissingPart)
-// 	assert.NotNil(err)
-// 	assert.Nil(refs)
+func TestParseAddressesString(t *testing.T) {
+	assert := assert.New(t)
+	var addrs []string
+	var err error
 
-// 	refs, err = parseReferencesString(testReferencesStringBadTime)
-// 	assert.NotNil(err)
-// 	assert.Nil(refs)
+	addrs, err = parseAddressesString(testAddressesStringValid)
+	assert.Equal([]string{"one@example.com", "two@example.com"}, addrs)
+	assert.Nil(err)
 
-// 	refs, err = parseReferencesString(testReferencesStringEmpty)
-// 	assert.NotNil(err)
-// 	assert.Nil(refs)
-// }
+	addrs, err = parseAddressesString(testAddressesStringEmpty)
+	assert.Nil(addrs)
+	assert.NotNil(err)
+}
 
-// func TestIsValidReferencesString(t *testing.T) {
-// 	assert := assert.New(t)
+func TestIsValidAddressesString(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(isValidAddressesString(testAddressesStringValid))
+	assert.False(isValidAddressesString(testAddressesStringEmpty))
+}
 
-// 	assert.True(isValidReferencesString(testReferencesStringValid))
-// 	assert.False(isValidReferencesString(testReferencesStringMissingPart))
-// 	assert.False(isValidReferencesString(testReferencesStringBadTime))
-// 	assert.False(isValidReferencesString(testReferencesStringEmpty))
-// }
+func TestParseIncidentsString(t *testing.T) {
+	assert := assert.New(t)
+	var incidents []string
+	var err error
 
-// func TestParsePolygonString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var poly Polygon
-// 	var err error
+	incidents, err = parseIncidentsString(testIncidentsStringValid)
+	assert.Equal([]string{"XXXX1", "XXXX2"}, incidents)
+	assert.Nil(err)
 
-// 	poly, err = parsePolygonString(testPolygonStringValid)
-// 	assert.Nil(err)
-// 	assert.Len(poly, 4)
-// 	assert.Equal(Point{Latitude: "38.47", Longitude: "-120.14"}, poly[0])
+	incidents, err = parseIncidentsString(testIncidentsStringEmpty)
+	assert.Nil(incidents)
+	assert.NotNil(err)
+}
 
-// 	poly, err = parsePolygonString(testPolygonStringShort)
-// 	assert.NotNil(err)
-// 	assert.Len(poly, 0)
+func TestIsValidIncidentsString(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(isValidIncidentsString(testIncidentsStringValid))
+	assert.False(isValidIncidentsString(testIncidentsStringEmpty))
+}
 
-// 	poly, err = parsePolygonString(testPolygonStringOpen)
-// 	assert.NotNil(err)
-// 	assert.Len(poly, 0)
+func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
+	assert := assert.New(t)
+	var strs []string
+	var err error
 
-// 	poly, err = parsePolygonString(testPolygonStringBadPoint)
-// 	assert.NotNil(err)
-// 	assert.Len(poly, 0)
+	strs, err = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid)
+	assert.Equal([]string{"hello world", "live", "goodbye world"}, strs)
+	assert.Nil(err)
 
-// 	poly, err = parsePolygonString(testPolygonStringEmpty)
-// 	assert.NotNil(err)
-// 	assert.Len(poly, 0)
-// }
+	strs, err = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid2)
+	assert.Equal([]string{"one", "two", "three ... (3)", "four"}, strs)
+	assert.Nil(err)
 
-// func TestIsValidPolygonString(t *testing.T) {
-// 	assert := assert.New(t)
+	strs, err = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid3)
+	assert.Equal([]string{"one"}, strs)
+	assert.Nil(err)
 
-// 	assert.True(isValidPolygonString(testPolygonStringValid))
-// 	assert.False(isValidPolygonString(testPolygonStringShort))
-// 	assert.False(isValidPolygonString(testPolygonStringOpen))
-// 	assert.False(isValidPolygonString(testPolygonStringBadPoint))
-// 	assert.False(isValidPolygonString(testPolygonStringEmpty))
-// }
+	strs, err = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringEmpty)
+	assert.Nil(strs)
+	assert.NotNil(err)
+}
 
-// func TestParseCircleString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var circle Circle
-// 	var err error
+func TestIsValidSpaceDelimitedQuotedStrings(t *testing.T) {
 
-// 	circle, err = parseCircleString(testCircleStringValid)
-// 	assert.Nil(err)
-// 	assert.Equal(Circle{Point: Point{Latitude: "32.9525", Longitude: "-115.5527"}, Radius: "1"}, circle)
+}
 
-// 	circle, err = parseCircleString(testCircleStringBadPoint)
-// 	assert.NotNil(err)
-// 	assert.Equal(Circle{}, circle)
+func TestParseTimeString(t *testing.T) {
 
-// 	circle, err = parseCircleString(testCircleStringNoPoint)
-// 	assert.NotNil(err)
-// 	assert.Equal(Circle{}, circle)
+}
 
-// 	circle, err = parseCircleString(testCircleStringNoRadius)
-// 	assert.NotNil(err)
-// 	assert.Equal(Circle{}, circle)
-// }
+func TestIsValidTimeString(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(isValidTimeString(testTimeStringValid))
+	assert.False(isValidTimeString(testTimeStringBadZone))
+}
 
-// func TestIsValidCircleString(t *testing.T) {
-// 	assert := assert.New(t)
+func TestParseURLString(t *testing.T) {
 
-// 	assert.True(isValidCircleString(testCircleStringValid))
-// 	assert.False(isValidCircleString(testCircleStringBadPoint))
-// 	assert.False(isValidCircleString(testCircleStringNoPoint))
-// 	assert.False(isValidCircleString(testCircleStringNoRadius))
-// }
+}
 
-// func TestParseAddressesString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var addrs []string
+func TestIsValidURLString(t *testing.T) {
+	assert := assert.New(t)
+	assert.True(isValidURLString(testURLStringFullValid))
+	assert.True(isValidURLString(testURLStringRelativeValid))
+	assert.False(isValidURLString(testURLStringInvalid))
+}
 
-// 	addrs = parseAddressesString(testAddressesStringValid)
-// 	assert.Equal([]string{"one@example.com", "two@example.com"}, addrs)
+func TestParseReferencesString(t *testing.T) {
+	assert := assert.New(t)
+	var refs []Reference
+	var err error
 
-// 	addrs = parseAddressesString(testAddressesStringEmpty)
-// 	assert.Len(addrs, 0)
-// }
+	refs, err = parseReferencesString(testReferencesStringValid)
+	assert.Len(refs, 2)
+	assert.Equal("user@example.com", refs[0].Sender)
+	assert.Equal("XX1122333", refs[0].Identifier)
+	tm, _ := time.Parse("2006-01-02T15:04:05-07:00", "2017-01-01T10:43:00-08:00")
+	assert.Equal(tm, refs[0].Sent)
+	assert.Nil(err)
 
-// func TestIsValidAddressesString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	assert.True(isValidAddressesString(testAddressesStringValid))
-// 	assert.False(isValidAddressesString(testAddressesStringEmpty))
-// }
+	refs, err = parseReferencesString(testReferencesStringMissingPart)
+	assert.Nil(refs)
+	assert.NotNil(err)
 
-// func TestParseIncidentsString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var incidents []string
+	refs, err = parseReferencesString(testReferencesStringBadTime)
+	assert.Nil(refs)
+	assert.NotNil(err)
 
-// 	incidents = parseIncidentsString(testIncidentsStringValid)
-// 	assert.Equal([]string{"XXXX1", "XXXX2"}, incidents)
+	refs, err = parseReferencesString(testReferencesStringEmpty)
+	assert.Nil(refs)
+	assert.NotNil(err)
+}
 
-// 	incidents = parseIncidentsString(testIncidentsStringEmpty)
-// 	assert.Len(incidents, 0)
-// }
+func TestIsValidReferencesString(t *testing.T) {
+	assert := assert.New(t)
 
-// func TestIsValidIncidentsString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	assert.True(isValidIncidentsString(testIncidentsStringValid))
-// 	assert.False(isValidIncidentsString(testIncidentsStringEmpty))
-// }
+	assert.True(isValidReferencesString(testReferencesStringValid))
+	assert.False(isValidReferencesString(testReferencesStringMissingPart))
+	assert.False(isValidReferencesString(testReferencesStringBadTime))
+	assert.False(isValidReferencesString(testReferencesStringEmpty))
+}
 
-// func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
-// 	assert := assert.New(t)
-// 	var strs []string
+func TestParseSingleReferencesString(t *testing.T) {
 
-// 	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid)
-// 	assert.Equal([]string{"hello world", "live", "goodbye world"}, strs)
+}
 
-// 	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid2)
-// 	assert.Equal([]string{"one", "two", "three ... (3)", "four"}, strs)
+func TestParsePolygonString(t *testing.T) {
+	assert := assert.New(t)
+	var poly Polygon
+	var err error
 
-// 	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringValid3)
-// 	assert.Equal([]string{"one"}, strs)
+	poly, err = parsePolygonString(testPolygonStringValid)
+	assert.Len(poly, 4)
+	assert.Equal(Point{Latitude: 38.47, Longitude: -120.14}, poly[0])
+	assert.Nil(err)
 
-// 	strs = splitSpaceDelimitedQuotedStrings(testSpaceDelimitedQuotedStringEmpty)
-// 	assert.Len(strs, 0)
-// }
+	poly, err = parsePolygonString(testPolygonStringShort)
+	assert.Len(poly, 0)
+	assert.NotNil(err)
 
-// func TestIsValidTimeString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	assert.True(isValidTimeString(testTimeStringValid))
-// 	assert.False(isValidTimeString(testTimeStringBadZone))
-// }
+	poly, err = parsePolygonString(testPolygonStringOpen)
+	assert.Len(poly, 0)
+	assert.NotNil(err)
 
-// func TestIsValidURLString(t *testing.T) {
-// 	assert := assert.New(t)
-// 	assert.True(isValidURLString(testURLStringFullValid))
-// 	assert.True(isValidURLString(testURLStringRelativeValid))
-// 	assert.False(isValidURLString(testURLStringInvalid))
-// }
+	poly, err = parsePolygonString(testPolygonStringBadPoint)
+	assert.Len(poly, 0)
+	assert.NotNil(err)
+
+	poly, err = parsePolygonString(testPolygonStringEmpty)
+	assert.Len(poly, 0)
+	assert.NotNil(err)
+}
+
+func TestIsValidPolygonString(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.True(isValidPolygonString(testPolygonStringValid))
+	assert.False(isValidPolygonString(testPolygonStringShort))
+	assert.False(isValidPolygonString(testPolygonStringOpen))
+	assert.False(isValidPolygonString(testPolygonStringBadPoint))
+	assert.False(isValidPolygonString(testPolygonStringEmpty))
+}
+
+func TestParseCircleString(t *testing.T) {
+	assert := assert.New(t)
+	var circle Circle
+	var err error
+
+	circle, err = parseCircleString(testCircleStringValid)
+	assert.Equal(Circle{Point: Point{Latitude: 32.9525, Longitude: -115.5527}, Radius: 1}, circle)
+	assert.Nil(err)
+
+	circle, err = parseCircleString(testCircleStringBadPoint)
+	assert.Equal(Circle{}, circle)
+	assert.NotNil(err)
+
+	circle, err = parseCircleString(testCircleStringNoPoint)
+	assert.Equal(Circle{}, circle)
+	assert.NotNil(err)
+
+	circle, err = parseCircleString(testCircleStringNoRadius)
+	assert.Equal(Circle{}, circle)
+	assert.NotNil(err)
+}
+
+func TestIsValidCircleString(t *testing.T) {
+	assert := assert.New(t)
+
+	assert.True(isValidCircleString(testCircleStringValid))
+	assert.False(isValidCircleString(testCircleStringBadPoint))
+	assert.False(isValidCircleString(testCircleStringNoPoint))
+	assert.False(isValidCircleString(testCircleStringNoRadius))
+}
