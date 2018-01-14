@@ -564,6 +564,9 @@ func removeEmptyStringsFromSlice(sliceOfStrings []string) []string {
 			out = append(out, s)
 		}
 	}
+	if len(out) == 0 {
+		return nil
+	}
 	return out
 }
 

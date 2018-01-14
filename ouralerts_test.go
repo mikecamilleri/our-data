@@ -1,6 +1,7 @@
 package ouralerts
 
 import (
+	"net/url"
 	"testing"
 	"time"
 
@@ -722,12 +723,21 @@ Wyoming Department of Health at www.health.wyo.gov.</description>
 	testSpaceDelimitedQuotedStringValid3 = `one`
 	testSpaceDelimitedQuotedStringEmpty  = ``
 
+	testIsValidSpaceDelimitedQuotedStringValid             = `one two three`
+	testIsValidSpaceDelimitedQuotedStringOddNumberOfQuotes = `hello "goodbye`
+	testIsValidSpaceDelimitedQuotedStringEmpty             = ``
+
 	testTimeStringValid   = `2017-01-01T10:43:00-08:00`
 	testTimeStringBadZone = `2017-01-01T10:43:00Z`
 
 	testURLStringFullValid     = `http://mikcamilleri.com/`
 	testURLStringRelativeValid = `hello`
 	testURLStringInvalid       = `http://example.com\`
+)
+
+var (
+	testRemoveEmptyStringsFromSliceValid = []string{"one", "", "three"}
+	testRemoveEmptyStringsFromSliceEmpty = []string{}
 )
 
 // TestValidateMessageXML implicitely tests alert.validate().
@@ -785,8 +795,18 @@ func TestProcessMessageXML(t *testing.T) {
 	assert.Nil(err)
 }
 
-func TestRremoveEmptyStringsFromSlice(t *testing.T) {
+func TestRemoveEmptyStringsFromSlice(t *testing.T) {
+	assert := assert.New(t)
+	var slice []string
 
+	slice = removeEmptyStringsFromSlice(testRemoveEmptyStringsFromSliceValid)
+	assert.Len(slice, 2)
+
+	slice = removeEmptyStringsFromSlice(testRemoveEmptyStringsFromSliceEmpty)
+	assert.Nil(slice)
+
+	slice = removeEmptyStringsFromSlice(nil)
+	assert.Nil(slice)
 }
 
 func TestParseAddressesString(t *testing.T) {
@@ -852,11 +872,22 @@ func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
 }
 
 func TestIsValidSpaceDelimitedQuotedStrings(t *testing.T) {
-
+	assert := assert.New(t)
+	assert.True(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringValid))
+	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringOddNumberOfQuotes))
+	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringEmpty))
 }
 
 func TestParseTimeString(t *testing.T) {
+	assert := assert.New(t)
+	tCorrect, _ := time.Parse("2006-01-02T15:04:05-07:00", testTimeStringValid)
 
+	tm, err := parseTimeString(testTimeStringValid)
+	assert.Equal(tCorrect, tm)
+	assert.Nil(err)
+
+	tm, err = parseTimeString(testTimeStringBadZone)
+	assert.NotNil(err)
 }
 
 func TestIsValidTimeString(t *testing.T) {
@@ -866,6 +897,21 @@ func TestIsValidTimeString(t *testing.T) {
 }
 
 func TestParseURLString(t *testing.T) {
+	assert := assert.New(t)
+
+	urlFullCorrect, _ := url.Parse(testURLStringFullValid)
+	urlFull, err := parseURLString(testURLStringFullValid)
+	assert.EqualValues(urlFullCorrect, urlFull)
+	assert.Nil(err)
+
+	urlRelativeCorrect, _ := url.Parse(testURLStringRelativeValid)
+	urlRelative, err := parseURLString(testURLStringRelativeValid)
+	assert.EqualValues(urlRelativeCorrect, urlRelative)
+	assert.Nil(err)
+
+	urlInvalid, err := parseURLString(testURLStringInvalid)
+	assert.Nil(urlInvalid)
+	assert.NotNil(err)
 
 }
 
@@ -876,6 +922,7 @@ func TestIsValidURLString(t *testing.T) {
 	assert.False(isValidURLString(testURLStringInvalid))
 }
 
+// TestParseReferencesString implicitely tests parseSingleReferenceString
 func TestParseReferencesString(t *testing.T) {
 	assert := assert.New(t)
 	var refs []Reference
@@ -909,10 +956,6 @@ func TestIsValidReferencesString(t *testing.T) {
 	assert.False(isValidReferencesString(testReferencesStringMissingPart))
 	assert.False(isValidReferencesString(testReferencesStringBadTime))
 	assert.False(isValidReferencesString(testReferencesStringEmpty))
-}
-
-func TestParseSingleReferencesString(t *testing.T) {
-
 }
 
 func TestParsePolygonString(t *testing.T) {
