@@ -3,16 +3,10 @@
 	Alerting Protocol Alert Messages
 */
 
-/*
-	func ValidateMessageXML(messageXML []byte) error {}
-	func ProcessMessageXML(messageXML []byte) (*Alert, error) {}
-
-	Unmarshall using charset reader to support non-UTF-8?
-*/
-
 package ouralerts
 
 import (
+	"bytes"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -20,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/html/charset"
 )
 
 const (
@@ -199,10 +195,15 @@ func ValidateMessageXML(messageXML []byte) error {
 
 // ProcessMessageXML takes an XML CAP alert message and returns an Alert struct
 func ProcessMessageXML(messageXML []byte) (*Alert, error) {
+	// creating our own decoder is required since the character set may not be UTF-8
 	a := &alert{}
-	if err := xml.Unmarshal(messageXML, a); err != nil {
+	reader := bytes.NewReader(messageXML)
+	decoder := xml.NewDecoder(reader)
+	decoder.CharsetReader = charset.NewReaderLabel
+	if err := decoder.Decode(a); err != nil {
 		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
 	}
+
 	converted, err := a.convert()
 	if err != nil {
 		return nil, fmt.Errorf("error(s) converting message to exported Alert struct: %s", err)
