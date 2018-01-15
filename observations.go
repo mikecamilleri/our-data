@@ -19,6 +19,8 @@ const (
 // An Observation holds a single meteorological observation. Numeric fields are
 // type `string` so that empty strings may represent missing data in the struct
 // and so that decimal values remain exact.
+//
+// TODO: use types other than string
 type Observation struct {
 	Location         string `xml:"location"`
 	StationId        string `xml:"station_id"`
@@ -121,6 +123,8 @@ func newObservationFromXML(xmlBytes []byte) (*Observation, error) {
 // observation into. The fields and XML mappings are based on
 // http://www.nws.noaa.gov/view/current_observation.xsd. Some available fields
 // are not included becuase they are outside the scope of this package.
+//
+// TODO: use a more comoplete set of fields
 type observation struct {
 	// SuggestedPickup       string `xml:"suggested_pickup"`
 	// SuggestedPickupPeriod string `xml:"suggested_pickup_period"`

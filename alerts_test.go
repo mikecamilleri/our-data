@@ -9,7 +9,7 @@ import (
 	httpmock "gopkg.in/jarcoal/httpmock.v1"
 )
 
-// TestGetAlerts also inherently tests getAlert
+// TestGetAlertsFeed also inherently tests getAlert
 func TestGetAlerts(t *testing.T) {
 	httpmock.Activate()
 	defer httpmock.DeactivateAndReset()

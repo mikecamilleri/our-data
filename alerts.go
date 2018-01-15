@@ -34,7 +34,6 @@ func getAlerts(httpClient *http.Client, zone string) ([]*ouralerts.Alert, error)
 	}
 
 	// get the alerts
-	// TODO: store the alerts and don't retrieve them multiple times.
 	alerts := []*ouralerts.Alert{}
 	for _, e := range f.Entries {
 		// this is a quick and dirty way to detect entries indicating that there
@@ -77,7 +76,7 @@ func getAlert(httpClient *http.Client, url string) (*ouralerts.Alert, error) {
 // alert entries
 type feed struct {
 	Entries []struct {
-		// because links are unique and don't change we can also use them an an
+		// because links are unique and don't change we can also use them as an
 		// ID; in fact, this is what the NWS does in the feed.
 		Link string `xml:"id"`
 	} `xml:"entry"`

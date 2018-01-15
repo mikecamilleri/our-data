@@ -70,8 +70,6 @@ func NewClientFromCoordinates(latitude, longitude string) (*Client, error) {
 
 // CurrentObservation returns the current conditions at the Client's location.
 func (c *Client) CurrentObservation() (*Observation, error) {
-	// TODO: store the most recent observation in the Client and avoid making
-	// API requests too ofton.
 	return getCurrentObservation(c.httpClient, c.station)
 }
 
