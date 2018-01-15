@@ -11,6 +11,7 @@ import (
 const (
 	// CAP alert message examples from specification
 	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
+
 	testHomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>43b080713727</identifier> 
@@ -192,9 +193,10 @@ const (
    </info>
 </alert>`
 
-	// actual CAP alert messages from the National Weather Service. The comment
+	// Actual CAP alert messages from the National Weather Service. The comment
 	// near the top of each message is incorrect. These are the actual alert
 	// messages and not part of an Atom feed.
+
 	testNWSHydrologicOutlook = `<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
 <?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
 
@@ -769,7 +771,6 @@ func TestValidateMessageXML(t *testing.T) {
 
 // TestProcessMessageXML tests that messages are processed as expected. This
 // implicitely tests alert.convert()
-// TODO: Improve this test
 func TestProcessMessageXML(t *testing.T) {
 	assert := assert.New(t)
 	var err error
@@ -825,6 +826,7 @@ func TestParseAddressesString(t *testing.T) {
 
 func TestIsValidAddressesString(t *testing.T) {
 	assert := assert.New(t)
+
 	assert.True(isValidAddressesString(testAddressesStringValid))
 	assert.False(isValidAddressesString(testAddressesStringEmpty))
 }
@@ -873,6 +875,7 @@ func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
 
 func TestIsValidSpaceDelimitedQuotedStrings(t *testing.T) {
 	assert := assert.New(t)
+
 	assert.True(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringValid))
 	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringOddNumberOfQuotes))
 	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringEmpty))
@@ -892,6 +895,7 @@ func TestParseTimeString(t *testing.T) {
 
 func TestIsValidTimeString(t *testing.T) {
 	assert := assert.New(t)
+
 	assert.True(isValidTimeString(testTimeStringValid))
 	assert.False(isValidTimeString(testTimeStringBadZone))
 }
@@ -917,6 +921,7 @@ func TestParseURLString(t *testing.T) {
 
 func TestIsValidURLString(t *testing.T) {
 	assert := assert.New(t)
+
 	assert.True(isValidURLString(testURLStringFullValid))
 	assert.True(isValidURLString(testURLStringRelativeValid))
 	assert.False(isValidURLString(testURLStringInvalid))

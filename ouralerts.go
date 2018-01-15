@@ -1,6 +1,6 @@
 /*
 	Package ouralerts implements the ability to parse and validate OASIS Common
-	Alerting Protocol Alert Messages
+	Alerting Protocol alert messages
 */
 
 package ouralerts
@@ -193,7 +193,9 @@ func ValidateMessageXML(messageXML []byte) error {
 	return nil
 }
 
-// ProcessMessageXML takes an XML CAP alert message and returns an Alert struct
+// ProcessMessageXML takes an XML CAP alert message and returns an Alert struct.
+// An effort is made to process invalid messages. If validity is a concern, the
+// message should be validated separately with ValidateMessageXML.
 func ProcessMessageXML(messageXML []byte) (*Alert, error) {
 	// creating our own decoder is required since the character set may not be UTF-8
 	a := &alert{}
@@ -213,7 +215,6 @@ func ProcessMessageXML(messageXML []byte) (*Alert, error) {
 
 // alert is used internally for unmarshalling a CAP alert message
 type alert struct {
-	// TODO: add namespace support to distiguish CAP versions
 	XMLNS       string   `xml:"xmlns,attr"`
 	Identifier  string   `xml:"identifier"`
 	Sender      string   `xml:"sender"`
@@ -636,8 +637,8 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) ([]str
 	return fields, nil
 }
 
-// isValidSpaceDelimitedQuotedStrings tests whether a SpaceDelimitedQuotedString
-// is valid
+// isValidSpaceDelimitedQuotedStrings tests whether a space delimited quoted
+// string is valid
 func isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) bool {
 	if len(spaceDelimitedQuotedStrings) == 0 {
 		return false
