@@ -68,7 +68,9 @@ func getAlert(httpClient *http.Client, url string) (*ouralerts.Alert, error) {
 		return nil, err
 	}
 
-	return ouralerts.ProcessAlertMsgXML(body)
+	// valiate alert message. How to convey invalidity and still return message?
+
+	return ouralerts.ProcessMessageXML(body)
 }
 
 // feed is a private struct used for unmarshalling the Atom feed containing
