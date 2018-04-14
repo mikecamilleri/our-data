@@ -195,7 +195,7 @@ func ValidateMessageXML(messageXML []byte) error {
 
 // ProcessMessageXML takes an XML CAP alert message and returns an Alert struct.
 // An effort is made to process invalid messages. If validity is a concern, the
-// message should be validated separately with ValidateMessageXML.
+// XML message should be validated separately with ValidateMessageXML.
 func ProcessMessageXML(messageXML []byte) (*Alert, error) {
 	// creating our own decoder is required since the character set may not be UTF-8
 	a := &alert{}
@@ -434,8 +434,11 @@ func (a *alert) validate() error {
 	}
 
 	if len(missingElements) > 0 {
-		errStrs = append(errStrs, fmt.Sprintf("missing elements ", strings.Join(missingElements, ", ")))
+		errStrs = append(errStrs, fmt.Sprintf("missing elements: %s", strings.Join(missingElements, ", ")))
 	}
+
+	// TODO: consider whether returning errStrs wold be more useful
+	// TODO: consider joining with newlines
 	if len(errStrs) > 0 {
 		return errors.New(strings.Join(errStrs, "; "))
 	}
@@ -465,7 +468,7 @@ func (a *alert) convert() (*Alert, error) {
 	for _, aInfo := range a.Infos {
 		var retInfo Info
 
-		// en-US is assumed if no Language is defined
+		// per the spec en-US is assumed if no Language is defined
 		if len(aInfo.Language) == 0 {
 			retInfo.Language = "en-US"
 		} else {

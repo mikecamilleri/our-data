@@ -8,10 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// CAP alert message examples from specification
+// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
 const (
-	// CAP alert message examples from specification
-	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2-os.html
-
 	testHomelandSecurityAdvisorySystemAlert = `<?xml version = "1.0" encoding = "UTF-8"?>
 <alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
   <identifier>43b080713727</identifier> 
@@ -696,8 +695,10 @@ Wyoming Department of Health at www.health.wyo.gov.</description>
 </area>
 </info>
 </alert>`
+)
 
-	// constants for unit tests
+// constants for unit tests
+const (
 	testReferencesStringValid       = `user@example.com,XX1122333,2017-01-01T10:43:00-08:00 user2@example.com,2XX1122333,2017-01-01T10:43:00-08:00`
 	testReferencesStringMissingPart = `user@example.com,2016-01-01T10:43:00-08:00`
 	testReferencesStringBadTime     = `user@example.com,XX1122333,2016-01-01T10:43:00`
