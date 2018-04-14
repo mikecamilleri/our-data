@@ -743,7 +743,8 @@ var (
 	testRemoveEmptyStringsFromSliceEmpty = []string{}
 )
 
-// TestValidateMessageXML implicitely tests alert.validate().
+// TestValidateMessageXML implicitely tests unmarshallMessageXML() and
+// alert.validate().
 // TODO: Improve this test
 func TestValidateMessageXML(t *testing.T) {
 	assert := assert.New(t)
@@ -771,7 +772,7 @@ func TestValidateMessageXML(t *testing.T) {
 }
 
 // TestProcessMessageXML tests that messages are processed as expected. This
-// implicitely tests alert.convert()
+// implicitely tests unmarshallMessageXML() and alert.convert()
 func TestProcessMessageXML(t *testing.T) {
 	assert := assert.New(t)
 	var err error

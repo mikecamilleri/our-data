@@ -183,12 +183,12 @@ type Point struct {
 
 // ValidateMessageXML validates an XML CAP alert message
 func ValidateMessageXML(messageXML []byte) error {
-	a := &alert{}
-	if err := xml.Unmarshal(messageXML, a); err != nil {
-		return fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	a, err := unmarshallMessageXML(messageXML)
+	if err != nil {
+		return fmt.Errorf("error unmarshalling message XML: %s", err)
 	}
 	if err := a.validate(); err != nil {
-		return fmt.Errorf("error(s) validating alert message: %s", err)
+		return fmt.Errorf("error validating alert message: %s", err)
 	}
 	return nil
 }
@@ -197,18 +197,13 @@ func ValidateMessageXML(messageXML []byte) error {
 // An effort is made to process invalid messages. If validity is a concern, the
 // XML message should be validated separately with ValidateMessageXML.
 func ProcessMessageXML(messageXML []byte) (*Alert, error) {
-	// creating our own decoder is required since the character set may not be UTF-8
-	a := &alert{}
-	reader := bytes.NewReader(messageXML)
-	decoder := xml.NewDecoder(reader)
-	decoder.CharsetReader = charset.NewReaderLabel
-	if err := decoder.Decode(a); err != nil {
-		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	a, err := unmarshallMessageXML(messageXML)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling message XML: %s", err)
 	}
-
 	converted, err := a.convert()
 	if err != nil {
-		return nil, fmt.Errorf("error(s) converting message to exported Alert struct: %s", err)
+		return nil, fmt.Errorf("error converting message to exported Alert struct: %s", err)
 	}
 	return converted, nil
 }
@@ -275,6 +270,19 @@ type alert struct {
 			Ceiling  string `xml:"ceiling"`
 		} `xml:"area"`
 	} `xml:"info"`
+}
+
+// unmarshallMessageXML
+func unmarshallMessageXML(messageXML []byte) (*alert, error) {
+	// creating our own decoder is required since the character set may not be UTF-8
+	a := &alert{}
+	reader := bytes.NewReader(messageXML)
+	decoder := xml.NewDecoder(reader)
+	decoder.CharsetReader = charset.NewReaderLabel
+	if err := decoder.Decode(a); err != nil {
+		return nil, fmt.Errorf("error unmarshalling alert message XML: %s", err)
+	}
+	return a, nil
 }
 
 // validate validates that the content of an alert struct conforms to the CAP
