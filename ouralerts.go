@@ -585,9 +585,9 @@ func removeEmptyStringsFromSlice(sliceOfStrings []string) []string {
 
 // parseAddressesString parses an addresses string
 func parseAddressesString(addressesString string) ([]string, error) {
-	if !isValidAddressesString(addressesString) {
-		return nil, errors.New("error parsing addresses string")
-	}
+	// if !isValidAddressesString(addressesString) {
+	// 	return nil, errors.New("error parsing addresses string")
+	// }
 	return splitSpaceDelimitedQuotedStrings(addressesString)
 }
 
@@ -598,9 +598,9 @@ func isValidAddressesString(addressesString string) bool {
 
 // parseIncidentsString parases an incidents string
 func parseIncidentsString(incidentsString string) ([]string, error) {
-	if !isValidIncidentsString(incidentsString) {
-		return nil, errors.New("error parsing incidents string")
-	}
+	// if !isValidIncidentsString(incidentsString) {
+	// 	return nil, errors.New("error parsing incidents string")
+	// }
 	return splitSpaceDelimitedQuotedStrings(incidentsString)
 }
 
@@ -612,9 +612,13 @@ func isValidIncidentsString(incidentsString string) bool {
 // splitSpaceDelimitedQuotedStrings splits space delimited quoted strings into
 // a slice of strings
 func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) ([]string, error) {
-	if !isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings) {
+	if len(spaceDelimitedQuotedStrings) == 0 {
 		return nil, errors.New("error splitting space delimited quoted string")
 	}
+	if strings.Count(spaceDelimitedQuotedStrings, `"`)%2 != 0 {
+		return nil, errors.New("error splitting space delimited quoted string")
+	}
+
 	var fields []string
 	// we use strings.SplitAfter to retain multiple whitespace in quoted
 	// sections
@@ -651,10 +655,7 @@ func splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) ([]str
 // isValidSpaceDelimitedQuotedStrings tests whether a space delimited quoted
 // string is valid
 func isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) bool {
-	if len(spaceDelimitedQuotedStrings) == 0 {
-		return false
-	}
-	if strings.Count(spaceDelimitedQuotedStrings, `"`)%2 != 0 {
+	if _, err := splitSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings); err != nil {
 		return false
 	}
 	return true
@@ -662,9 +663,6 @@ func isValidSpaceDelimitedQuotedStrings(spaceDelimitedQuotedStrings string) bool
 
 // parseTimeString parses a time string
 func parseTimeString(timeString string) (time.Time, error) {
-	if !isValidTimeString(timeString) {
-		return time.Time{}, errors.New("error parsing time string")
-	}
 	t, err := time.Parse(timeFormat, timeString)
 	if err != nil {
 		return time.Time{}, errors.New("error parsing time string")
@@ -674,10 +672,7 @@ func parseTimeString(timeString string) (time.Time, error) {
 
 // isValidTimeString tests whether a time string is valid
 func isValidTimeString(timeString string) bool {
-	if len(timeString) == 0 {
-		return false
-	}
-	if _, err := time.Parse(timeFormat, timeString); err != nil {
+	if _, err := parseTimeString(timeString); err != nil {
 		return false
 	}
 	return true
@@ -685,9 +680,6 @@ func isValidTimeString(timeString string) bool {
 
 // parseURLString parses a URL string
 func parseURLString(urlString string) (*url.URL, error) {
-	if !isValidURLString(urlString) {
-		return nil, errors.New("error parsing URL string")
-	}
 	url, err := url.Parse(urlString)
 	if err != nil {
 		return nil, errors.New("error parsing URL string")
@@ -697,10 +689,7 @@ func parseURLString(urlString string) (*url.URL, error) {
 
 // isValidURLString tests whether a URL string is valid
 func isValidURLString(urlString string) bool {
-	if len(urlString) == 0 {
-		return false
-	}
-	if _, err := url.Parse(urlString); err != nil {
+	if _, err := parseURLString(urlString); err != nil {
 		return false
 	}
 	return true
@@ -708,7 +697,7 @@ func isValidURLString(urlString string) bool {
 
 // parseReferencesString parses a references string
 func parseReferencesString(referencesString string) ([]Reference, error) {
-	if !isValidReferencesString(referencesString) {
+	if len(referencesString) == 0 {
 		return nil, errors.New("error parsing references string")
 	}
 	refStrings := strings.Fields(referencesString)
@@ -716,7 +705,7 @@ func parseReferencesString(referencesString string) ([]Reference, error) {
 	for _, rs := range refStrings {
 		r, err := parseSingleReferenceString(rs)
 		if err != nil {
-			continue
+			return nil, errors.New("error parsing references string")
 		}
 		refs = append(refs, r)
 	}
@@ -728,14 +717,8 @@ func parseReferencesString(referencesString string) ([]Reference, error) {
 
 // isValidReferencesString tests whether a references string is valid
 func isValidReferencesString(referencesString string) bool {
-	if len(referencesString) == 0 {
+	if _, err := parseReferencesString(referencesString); err != nil {
 		return false
-	}
-	refStrings := strings.Fields(referencesString)
-	for _, rs := range refStrings {
-		if _, err := parseSingleReferenceString(rs); err != nil {
-			return false
-		}
 	}
 	return true
 }
@@ -755,13 +738,21 @@ func parseSingleReferenceString(singleReferenceString string) (Reference, error)
 
 // parsePolygonString parses a polygon string
 func parsePolygonString(polygonString string) (Polygon, error) {
-	if !isValidPolygonString(polygonString) {
+	var polygon Polygon
+	if len(polygonString) == 0 {
 		return Polygon{}, errors.New("error parsing polygon string")
 	}
-	var polygon Polygon
 	pointStrings := strings.Fields(polygonString)
+	// a polygon must contain at least four points
+	if len(pointStrings) < 4 {
+		return Polygon{}, errors.New("error parsing polygon string")
+	}
 	for _, ps := range pointStrings {
 		vals := strings.Split(ps, ",")
+		// a point must contain exactly two values
+		if len(vals) != 2 {
+			return Polygon{}, errors.New("error parsing polygon string")
+		}
 		var lat, lon float64
 		var err error
 		if lat, err = strconv.ParseFloat(vals[0], 64); err != nil {
@@ -771,39 +762,17 @@ func parsePolygonString(polygonString string) (Polygon, error) {
 			return Polygon{}, errors.New("error parsing polygon string")
 		}
 		polygon = append(polygon, Point{lat, lon})
+	}
+	// first and last points must be equal
+	if polygon[0] != polygon[len(polygon)-1] {
+		return Polygon{}, errors.New("error parsing polygon string")
 	}
 	return polygon, nil
 }
 
 // isValidPolygonString tests whether a polygon string is valid
 func isValidPolygonString(polygonString string) bool {
-	if len(polygonString) == 0 {
-		return false
-	}
-	pointStrings := strings.Fields(polygonString)
-	// a polygon must contain at least four points
-	if len(pointStrings) < 4 {
-		return false
-	}
-	var polygon Polygon
-	for _, ps := range pointStrings {
-		vals := strings.Split(ps, ",")
-		// a point must contain exactly two values
-		if len(vals) != 2 {
-			return false
-		}
-		var lat, lon float64
-		var err error
-		if lat, err = strconv.ParseFloat(vals[0], 64); err != nil {
-			return false
-		}
-		if lon, err = strconv.ParseFloat(vals[1], 64); err != nil {
-			return false
-		}
-		polygon = append(polygon, Point{lat, lon})
-	}
-	// first and last points must be equal
-	if polygon[0] != polygon[len(polygon)-1] {
+	if _, err := parsePolygonString(polygonString); err != nil {
 		return false
 	}
 	return true
@@ -811,10 +780,10 @@ func isValidPolygonString(polygonString string) bool {
 
 // parseCircleString parses a circle string
 func parseCircleString(circleString string) (Circle, error) {
-	if !isValidCircleString(circleString) {
+	var circle Circle
+	if len(circleString) == 0 {
 		return Circle{}, errors.New("error parsing circle string")
 	}
-	var circle Circle
 	var lat, lon, rad float64
 	var err error
 	pointRadiusStrings := strings.Fields(circleString)
@@ -841,26 +810,7 @@ func parseCircleString(circleString string) (Circle, error) {
 
 // isValidCircleString tests whether a circle string is valid
 func isValidCircleString(circleString string) bool {
-	if len(circleString) == 0 {
-		return false
-	}
-	pointRadiusStrings := strings.Fields(circleString)
-	if len(pointRadiusStrings) != 2 {
-		// a circle must contain a central point and a radius
-		return false
-	}
-	pVals := strings.Split(pointRadiusStrings[0], ",")
-	if len(pVals) != 2 {
-		// central point must contain exactly two values
-		return false
-	}
-	if _, err := strconv.ParseFloat(pVals[0], 64); err != nil {
-		return false
-	}
-	if _, err := strconv.ParseFloat(pVals[1], 64); err != nil {
-		return false
-	}
-	if _, err := strconv.ParseFloat(pointRadiusStrings[1], 64); err != nil {
+	if _, err := parseCircleString(circleString); err != nil {
 		return false
 	}
 	return true
