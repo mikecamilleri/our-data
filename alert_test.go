@@ -743,34 +743,6 @@ var (
 	testRemoveEmptyStringsFromSliceEmpty = []string{}
 )
 
-// TestValidateMessageXML implicitely tests unmarshallMessageXML() and
-// alert.validate().
-// TODO: Improve this test
-func TestValidateMessageXML(t *testing.T) {
-	assert := assert.New(t)
-	var err error
-
-	// CAP 1.2 specification examples
-	err = ValidateMessageXML([]byte(testHomelandSecurityAdvisorySystemAlert))
-	assert.Nil(err)
-	err = ValidateMessageXML([]byte(testSevereThunderstormWarning))
-	assert.Nil(err)
-	err = ValidateMessageXML([]byte(testEarthquakeReportUpdateMessage))
-	assert.Nil(err)
-	err = ValidateMessageXML([]byte(testAmberAlertMultilingualMessage))
-	assert.Nil(err)
-
-	// Actual NWS examples are invalid due to empty polygon
-	err = ValidateMessageXML([]byte(testNWSHydrologicOutlook))
-	assert.NotNil(err)
-	err = ValidateMessageXML([]byte(testNWSWinterWeatherAdvisory))
-	assert.NotNil(err)
-	err = ValidateMessageXML([]byte(testNWSWinterStormWarning))
-	assert.NotNil(err)
-	err = ValidateMessageXML([]byte(testNWSAirQualityAlert))
-	assert.NotNil(err)
-}
-
 // TestProcessMessageXML tests that messages are processed as expected. This
 // implicitely tests unmarshallMessageXML() and alert.convert()
 func TestProcessMessageXML(t *testing.T) {
@@ -826,13 +798,6 @@ func TestParseAddressesString(t *testing.T) {
 	assert.NotNil(err)
 }
 
-func TestIsValidAddressesString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidAddressesString(testAddressesStringValid))
-	assert.False(isValidAddressesString(testAddressesStringEmpty))
-}
-
 func TestParseIncidentsString(t *testing.T) {
 	assert := assert.New(t)
 	var incidents []string
@@ -845,12 +810,6 @@ func TestParseIncidentsString(t *testing.T) {
 	incidents, err = parseIncidentsString(testIncidentsStringEmpty)
 	assert.Nil(incidents)
 	assert.NotNil(err)
-}
-
-func TestIsValidIncidentsString(t *testing.T) {
-	assert := assert.New(t)
-	assert.True(isValidIncidentsString(testIncidentsStringValid))
-	assert.False(isValidIncidentsString(testIncidentsStringEmpty))
 }
 
 func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
@@ -875,14 +834,6 @@ func TestSplitSpaceDelimitedQuotedStrings(t *testing.T) {
 	assert.NotNil(err)
 }
 
-func TestIsValidSpaceDelimitedQuotedStrings(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringValid))
-	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringOddNumberOfQuotes))
-	assert.False(isValidSpaceDelimitedQuotedStrings(testIsValidSpaceDelimitedQuotedStringEmpty))
-}
-
 func TestParseTimeString(t *testing.T) {
 	assert := assert.New(t)
 	tCorrect, _ := time.Parse("2006-01-02T15:04:05-07:00", testTimeStringValid)
@@ -893,13 +844,6 @@ func TestParseTimeString(t *testing.T) {
 
 	tm, err = parseTimeString(testTimeStringBadZone)
 	assert.NotNil(err)
-}
-
-func TestIsValidTimeString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidTimeString(testTimeStringValid))
-	assert.False(isValidTimeString(testTimeStringBadZone))
 }
 
 func TestParseURLString(t *testing.T) {
@@ -919,14 +863,6 @@ func TestParseURLString(t *testing.T) {
 	assert.Nil(urlInvalid)
 	assert.NotNil(err)
 
-}
-
-func TestIsValidURLString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidURLString(testURLStringFullValid))
-	assert.True(isValidURLString(testURLStringRelativeValid))
-	assert.False(isValidURLString(testURLStringInvalid))
 }
 
 // TestParseReferencesString implicitely tests parseSingleReferenceString
@@ -956,15 +892,6 @@ func TestParseReferencesString(t *testing.T) {
 	assert.NotNil(err)
 }
 
-func TestIsValidReferencesString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidReferencesString(testReferencesStringValid))
-	assert.False(isValidReferencesString(testReferencesStringMissingPart))
-	assert.False(isValidReferencesString(testReferencesStringBadTime))
-	assert.False(isValidReferencesString(testReferencesStringEmpty))
-}
-
 func TestParsePolygonString(t *testing.T) {
 	assert := assert.New(t)
 	var poly Polygon
@@ -992,16 +919,6 @@ func TestParsePolygonString(t *testing.T) {
 	assert.NotNil(err)
 }
 
-func TestIsValidPolygonString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidPolygonString(testPolygonStringValid))
-	assert.False(isValidPolygonString(testPolygonStringShort))
-	assert.False(isValidPolygonString(testPolygonStringOpen))
-	assert.False(isValidPolygonString(testPolygonStringBadPoint))
-	assert.False(isValidPolygonString(testPolygonStringEmpty))
-}
-
 func TestParseCircleString(t *testing.T) {
 	assert := assert.New(t)
 	var circle Circle
@@ -1022,13 +939,4 @@ func TestParseCircleString(t *testing.T) {
 	circle, err = parseCircleString(testCircleStringNoRadius)
 	assert.Equal(Circle{}, circle)
 	assert.NotNil(err)
-}
-
-func TestIsValidCircleString(t *testing.T) {
-	assert := assert.New(t)
-
-	assert.True(isValidCircleString(testCircleStringValid))
-	assert.False(isValidCircleString(testCircleStringBadPoint))
-	assert.False(isValidCircleString(testCircleStringNoPoint))
-	assert.False(isValidCircleString(testCircleStringNoRadius))
 }
