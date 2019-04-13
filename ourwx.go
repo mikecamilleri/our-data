@@ -6,6 +6,7 @@ This package is built with an eye towards home automation and similar
 applications of interest to the general public. This is reflected in the
 available APIs and subset of data retrieved from each.
 */
+
 package ourwx
 
 import (
@@ -67,6 +68,8 @@ func NewClientFromCoordinates(latitude, longitude string) (*Client, error) {
 	}
 	return c, nil
 }
+
+// New client from Zip code?
 
 // CurrentObservation returns the current conditions at the Client's location.
 func (c *Client) CurrentObservation() (*Observation, error) {
