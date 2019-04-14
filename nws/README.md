@@ -2,6 +2,8 @@
 
 Interact with United States National Weather Service (NWS) APIs in Go.
 
+This was recently moved so _everything is broken_!
+
 ## Warning!
 
 This project is a work in progress and absolutely not production ready. The exported interface is unstable. 

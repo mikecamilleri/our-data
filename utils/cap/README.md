@@ -2,6 +2,8 @@
 
 Validate and parse Common Alerting Protocol (CAP) alert messages in Go.
 
+This was recently moved so _everything is broken_!
+
 ## Warning!
 
 This project is a work in progress and absolutely not production ready. The exported interface is unstable. 
