@@ -1,4 +1,4 @@
-# our-data
+# our-data-go
 
 Golang packages to interact with data from government agencies such as the National Weather Service.
 
