@@ -1,6 +1,6 @@
-# OurWx (`ourwx`)
+# our-data-go/nws
 
-Interact with United States National Weather Service (NWS) APIs in Go.
+Interact with the United States National Weather Service (NWS) API in Go.
 
 This was recently moved so _everything is broken_!
 
@@ -10,10 +10,8 @@ This project is a work in progress and absolutely not production ready. The expo
 
 ## Introduction
 
-Although several companies provide web APIs for weather data, most of them are limited or unavailable without a fee. The NWS uses our tax dollars to collect and analyze a full range of weather data. It is our (the public's) data and is available at [weather.gov](http://www.weather.gov). The goal of this library is to provide a convenient way to access that data in Go. 
-
-OurWx is still in the very early stages of development, but as I continue to work on this project, I hope to increase the both the number of APIs available and amount of data retreived from each. 
+Although several companies provide web APIs for weather data, most of them are limited or unavailable without a fee. The NWS analyze a full range of weather data and is available for free at [weather.gov](http://www.weather.gov) and via several APIs. The goal of this package is to provide a convenient way to access those data in Go. The API used in this package is documented [here](https://www.weather.gov/documentation/services-web-api). 
 
 ## License
 
-Please see the `LICENSE` file in this repository.
+Please see the `LICENSE` file.
