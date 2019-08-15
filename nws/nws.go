@@ -15,138 +15,131 @@
 // Package nws ...
 package nws
 
-import "net/http"
+import (
+	"math"
+	"net/http"
+	"time"
+)
 
 // Client ...
 type Client struct {
-	HTTPClient *http.Client
-	Point      Point
-	Gridpoint  Gridpoint
-	Stations   []Station
+	httpClient *http.Client
+	point      Point
+	gridpoint  Gridpoint
+
+	stations         []Station
+	defaultStationID string
+
+	alerts             []Alert
+	alertsLastRetrived time.Time
+
+	semidailyForecast              Forecast
+	semidailyForecastLastRetrieved time.Time
+	hourlyForecast                 Forecast
+	hourlyForecastLastRetrieved    time.Time
+
+	// observations maps Observation to station ID (callsigns)
+	observations map[string]Observation
 }
 
 // NewClientFromCoordinates ...
-func NewClientFromCoordinates(httpClient http.Client, lat float32, lon float32) (*Client, error) {
-	return nil, nil
+func NewClientFromCoordinates(httpClient *http.Client, lat float64, lon float64) (*Client, error) {
+	c := &Client{
+		httpClient: &http.Client{},
+
+		// point is rounded to four decimal places because the API requires
+		// that requests be made with at most four decimal places. The API will
+		// 301 redirect, but using four in the first place eliminates the need
+		// for those.
+		point: Point{
+			Lat: math.Round(lat*10000) / 10000,
+			Lon: math.Round(lon*10000) / 10000,
+		},
+	}
+
+	if err := c.setGridpointFromPoint(); err != nil {
+		return nil, err
+	}
+	// setStationsFromGridpont() also sets defaultStationID
+	if err := c.setStationsFromGridpont(); err != nil {
+		return nil, err
+	}
+
+	return c, nil
 }
 
-// TODO: Add methods to retrieve the various data, mostly wrapping the functions
-//       written. Consider adding a throttled client and/or functions that wrap
-//       those of http.Client.
+// Point ...
+func (c *Client) Point() (Point, error) {
+	return c.point, nil
+}
 
-////////////////////////////////////////////////////////////////////////////////
-// EXAMPLE request and responses below.
-// - redirects are 301
+// Gridpoint ...
+func (c *Client) Gridpoint() (Gridpoint, error) {
+	return c.gridpoint, nil
+}
 
-// mike@Darwin-D go % curl -X GET "https://api.weather.gov/points/45.45805556%2C-122.66361111"
-// {
-//     "correlationId": "5d87b573-4c63-4b4c-85be-ae3e5308e8f4",
-//     "title": "Adjusting Precision Of Point Coordinate",
-//     "type": "https://api.weather.gov/problems/AdjustPointPrecision",
-//     "status": 301,
-//     "detail": "The precision of latitude/longitude points is limited to 4 decimal digits for efficiency. The location attribute contains your request mapped to the nearest supported point. If your client supports it, you will be redirected.",
-//     "instance": "https://api.weather.gov/requests/5d87b573-4c63-4b4c-85be-ae3e5308e8f4"
-// }
-// mike@Darwin-D go % curl -X GET "https://api.weather.gov/points/45.4580,-122.6636"
-// {
-//     "correlationId": "c1303b55-6f14-4d8d-9942-9c105c6c4fa8",
-//     "title": "Adjusting Trailing Zeros Of Point Coordinate",
-//     "type": "https://api.weather.gov/problems/AdjustTrailingZeroRedundancy",
-//     "status": 301,
-//     "detail": "The coordinates cannot have trailing zeros in the decimal digit. The location attribute contains your request with the redundancy removed. If your client supports it, you will be redirected.",
-//     "instance": "https://api.weather.gov/requests/c1303b55-6f14-4d8d-9942-9c105c6c4fa8"
-// }
-// mike@Darwin-D go % curl -X GET "https://api.weather.gov/points/45.458,-122.6636"
-// {
-//     "@context": [
-//         "https://raw.githubusercontent.com/geojson/geojson-ld/master/contexts/geojson-base.jsonld",
-//         {
-//             "wx": "https://api.weather.gov/ontology#",
-//             "s": "https://schema.org/",
-//             "geo": "http://www.opengis.net/ont/geosparql#",
-//             "unit": "http://codes.wmo.int/common/unit/",
-//             "@vocab": "https://api.weather.gov/ontology#",
-//             "geometry": {
-//                 "@id": "s:GeoCoordinates",
-//                 "@type": "geo:wktLiteral"
-//             },
-//             "city": "s:addressLocality",
-//             "state": "s:addressRegion",
-//             "distance": {
-//                 "@id": "s:Distance",
-//                 "@type": "s:QuantitativeValue"
-//             },
-//             "bearing": {
-//                 "@type": "s:QuantitativeValue"
-//             },
-//             "value": {
-//                 "@id": "s:value"
-//             },
-//             "unitCode": {
-//                 "@id": "s:unitCode",
-//                 "@type": "@id"
-//             },
-//             "forecastOffice": {
-//                 "@type": "@id"
-//             },
-//             "forecastGridData": {
-//                 "@type": "@id"
-//             },
-//             "publicZone": {
-//                 "@type": "@id"
-//             },
-//             "county": {
-//                 "@type": "@id"
-//             }
-//         }
-//     ],
-//     "id": "https://api.weather.gov/points/45.458,-122.6636",
-//     "type": "Feature",
-//     "geometry": {
-//         "type": "Point",
-//         "coordinates": [
-//             -122.6636,
-//             45.457999999999998
-//         ]
-//     },
-//     "properties": {
-//         "@id": "https://api.weather.gov/points/45.458,-122.6636",
-//         "@type": "wx:Point",
-//         "cwa": "PQR",
-//         "forecastOffice": "https://api.weather.gov/offices/PQR",
-//         "gridX": 112,
-//         "gridY": 100,
-//         "forecast": "https://api.weather.gov/gridpoints/PQR/112,100/forecast",
-//         "forecastHourly": "https://api.weather.gov/gridpoints/PQR/112,100/forecast/hourly",
-//         "forecastGridData": "https://api.weather.gov/gridpoints/PQR/112,100",
-//         "observationStations": "https://api.weather.gov/gridpoints/PQR/112,100/stations",
-//         "relativeLocation": {
-//             "type": "Feature",
-//             "geometry": {
-//                 "type": "Point",
-//                 "coordinates": [
-//                     -122.620915,
-//                     45.444124000000002
-//                 ]
-//             },
-//             "properties": {
-//                 "city": "Milwaukie",
-//                 "state": "OR",
-//                 "distance": {
-//                     "value": 3669.782693174343,
-//                     "unitCode": "unit:m"
-//                 },
-//                 "bearing": {
-//                     "value": 294,
-//                     "unitCode": "unit:degrees_true"
-//                 }
-//             }
-//         },
-//         "forecastZone": "https://api.weather.gov/zones/forecast/ORZ006",
-//         "county": "https://api.weather.gov/zones/county/ORC051",
-//         "fireWeatherZone": "https://api.weather.gov/zones/fire/ORZ604",
-//         "timeZone": "America/Los_Angeles",
-//         "radarStation": "KRTX"
-//     }
-// }
-// mike@Darwin-D go %
+// Stations ...
+func (c *Client) Stations() ([]Station, error) {
+	return c.stations, nil
+}
+
+// DefaultStationID ...
+func (c *Client) DefaultStationID() (string, error) {
+	return "", nil
+}
+
+// SetDefaultStationID ...
+func (c *Client) SetDefaultStationID() error {
+	return nil
+}
+
+// SemidailyForecast ...
+func (c *Client) SemidailyForecast() (Forecast, error) {
+	// update LastRetrieved
+	return c.semidailyForecast, nil
+}
+
+// Alerts ...
+func (c *Client) Alerts(id string) ([]Alert, error) {
+	// update LastRetrieved
+	return c.alerts, nil
+}
+
+// HourlyForecast ...
+func (c *Client) HourlyForecast() (Forecast, error) {
+	// update LastRetrieved
+	return c.hourlyForecast, nil
+}
+
+// ObservationForDefaultStation ...
+func (c *Client) ObservationForDefaultStation() (Observation, error) {
+	return c.observations[c.defaultStationID], nil
+}
+
+// ObservationForStation ...
+func (c *Client) ObservationForStation(id string) (Observation, error) {
+	return c.observations[id], nil
+}
+
+func (c *Client) setGridpointFromPoint() error {
+	gp, err := getGridpointForPoint(c.httpClient, c.point)
+	if err != nil {
+		return err
+	}
+	c.gridpoint = gp
+	return nil
+}
+
+func (c *Client) setStationsFromGridpont() error {
+	stns, err := getStationsForGridpoint(c.httpClient, c.gridpoint)
+	if err != nil {
+		return err
+	}
+	// setDefaultStationID() here to stns[0].ID
+	c.stations = stns
+	return nil
+}
+
+func (c *Client) setDefaultStationID() error {
+	return nil
+}

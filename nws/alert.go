@@ -14,7 +14,9 @@
 
 package nws
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Alert ...
 type Alert struct {
@@ -22,7 +24,7 @@ type Alert struct {
 
 // getActiveAlertsForPoint ...
 func getActiveAlertsForPoint(httpClinet *http.Client, point Point) ([]Alert, error) {
-	return nil, nil
+	return []Alert{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

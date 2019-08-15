@@ -14,15 +14,18 @@
 
 package nws
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Station ...
 type Station struct {
+	ID string // callsign
 }
 
 // getStationsForGridpoint ...
-func getStationsForGridpoint(httpClinet *http.Client, wfo string, x int, y int) ([]Station, error) {
-	return nil, nil
+func getStationsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) ([]Station, error) {
+	return []Station{}, nil
 }
 
 // newObservationFromJSON ?

@@ -14,20 +14,29 @@
 
 package nws
 
-import "net/http"
+import (
+	"net/http"
+	"time"
+)
 
 // Forecast ...
 type Forecast struct {
+	LastUpdated time.Time
+	Periods     []Period
+}
+
+// Period ...
+type Period struct {
 }
 
 // getSemidailyForcastsForGridpoint ...
-func getSemidailyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) ([]Forecast, error) {
-	return nil, nil
+func getSemidailyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (Forecast, error) {
+	return Forecast{}, nil
 }
 
 // getHourlyForcastsForGridpoint ...
-func getHourlyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) ([]Forecast, error) {
-	return nil, nil
+func getHourlyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (Forecast, error) {
+	return Forecast{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -14,15 +14,17 @@
 
 package nws
 
-import "net/http"
+import (
+	"net/http"
+)
 
 // Observation ...
 type Observation struct {
 }
 
-// getLatestObservation ...
-func getLatestObservationForStation(httpClinet *http.Client, station string) (*Observation, error) {
-	return nil, nil
+// getLatestObservationForStation ...
+func getLatestObservationForStation(httpClinet *http.Client, station string) (Observation, error) {
+	return Observation{}, nil
 }
 
 // newObservationFromJSON ?
