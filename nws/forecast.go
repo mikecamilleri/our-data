@@ -30,13 +30,13 @@ type Period struct {
 }
 
 // getSemidailyForcastsForGridpoint ...
-func getSemidailyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (Forecast, error) {
-	return Forecast{}, nil
+func getSemidailyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (*Forecast, error) {
+	return nil, nil
 }
 
 // getHourlyForcastsForGridpoint ...
-func getHourlyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (Forecast, error) {
-	return Forecast{}, nil
+func getHourlyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (*Forecast, error) {
+	return nil, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

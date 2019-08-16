@@ -18,28 +18,25 @@ package nws
 import (
 	"math"
 	"net/http"
+	"net/url"
 	"time"
 )
 
 // Client ...
 type Client struct {
-	httpClient *http.Client
-	point      Point
-	gridpoint  Gridpoint
-
+	httpClient       *http.Client
+	point            Point
+	gridpoint        Gridpoint
 	stations         []Station
 	defaultStationID string
 
-	alerts             []Alert
-	alertsLastRetrived time.Time
-
+	alerts                         []Alert
+	alertsLastRetrived             time.Time
 	semidailyForecast              Forecast
 	semidailyForecastLastRetrieved time.Time
 	hourlyForecast                 Forecast
 	hourlyForecastLastRetrieved    time.Time
-
-	// observations maps Observation to station ID (callsigns)
-	observations map[string]Observation
+	observations                   map[string]Observation // key is stationID
 }
 
 // NewClientFromCoordinates ...
@@ -121,15 +118,17 @@ func (c *Client) ObservationForStation(id string) (Observation, error) {
 	return c.observations[id], nil
 }
 
+// setGridpointFromPoint ...
 func (c *Client) setGridpointFromPoint() error {
 	gp, err := getGridpointForPoint(c.httpClient, c.point)
 	if err != nil {
 		return err
 	}
-	c.gridpoint = gp
+	c.gridpoint = *gp
 	return nil
 }
 
+// setStationsFromGridpont ...
 func (c *Client) setStationsFromGridpont() error {
 	stns, err := getStationsForGridpoint(c.httpClient, c.gridpoint)
 	if err != nil {
@@ -140,6 +139,13 @@ func (c *Client) setStationsFromGridpont() error {
 	return nil
 }
 
+// setDefaultStationID ...
 func (c *Client) setDefaultStationID() error {
 	return nil
+}
+
+// get ...
+func (c *Client) get(path string, query url.Values) (*http.Response, error) {
+
+	return nil, nil
 }

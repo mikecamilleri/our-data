@@ -24,8 +24,8 @@ type Gridpoint struct {
 }
 
 // getGridpointFromPoint ...
-func getGridpointForPoint(httpClinet *http.Client, point Point) (Gridpoint, error) {
-	return Gridpoint{}, nil
+func getGridpointForPoint(httpClinet *http.Client, point Point) (*Gridpoint, error) {
+	return nil, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

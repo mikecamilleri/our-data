@@ -25,7 +25,7 @@ type Station struct {
 
 // getStationsForGridpoint ...
 func getStationsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) ([]Station, error) {
-	return []Station{}, nil
+	return nil, nil
 }
 
 // newObservationFromJSON ?

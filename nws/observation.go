@@ -23,8 +23,8 @@ type Observation struct {
 }
 
 // getLatestObservationForStation ...
-func getLatestObservationForStation(httpClinet *http.Client, station string) (Observation, error) {
-	return Observation{}, nil
+func getLatestObservationForStation(httpClinet *http.Client, station string) (*Observation, error) {
+	return nil, nil
 }
 
 // newObservationFromJSON ?

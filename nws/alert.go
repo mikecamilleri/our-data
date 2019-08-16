@@ -24,7 +24,7 @@ type Alert struct {
 
 // getActiveAlertsForPoint ...
 func getActiveAlertsForPoint(httpClinet *http.Client, point Point) ([]Alert, error) {
-	return []Alert{}, nil
+	return nil, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
