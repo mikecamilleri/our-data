@@ -22,9 +22,15 @@ import (
 	"time"
 )
 
+const (
+	baseURLString = "https://api.weather.gov/"
+)
+
 // Client ...
 type Client struct {
-	httpClient       *http.Client
+	httpClient    *http.Client
+	baseURLString string
+
 	point            Point
 	gridpoint        Gridpoint
 	stations         []Station
@@ -54,15 +60,35 @@ func NewClientFromCoordinates(httpClient *http.Client, lat float64, lon float64)
 		},
 	}
 
+	if err := c.setBaseURLString(baseURLString); err != nil {
+		return nil, err
+	}
+
 	if err := c.setGridpointFromPoint(); err != nil {
 		return nil, err
 	}
-	// setStationsFromGridpont() also sets defaultStationID
+
 	if err := c.setStationsFromGridpont(); err != nil {
 		return nil, err
 	}
 
+	if err := c.setDefaultStationID(c.stations[0].ID); err != nil {
+		return nil, err
+	}
+
 	return c, nil
+}
+
+// BaseURLString ...
+func (c *Client) BaseURLString() string {
+	return c.baseURLString
+}
+
+// SetBaseURLString sets the base URL used by the client. The base URL is set
+// to the default during Client construction. This is in place to facilitate
+// testing and so that the user can change the base URL if the NWS does.
+func (c *Client) SetBaseURLString(url string) error {
+	return c.setBaseURLString(url)
 }
 
 // Point ...
@@ -85,9 +111,10 @@ func (c *Client) DefaultStationID() (string, error) {
 	return "", nil
 }
 
-// SetDefaultStationID ...
-func (c *Client) SetDefaultStationID() error {
-	return nil
+// SetDefaultStationID is set to the first station in the list of stations
+// returned when the Client is constructed.
+func (c *Client) SetDefaultStationID(id string) error {
+	return c.setDefaultStationID(id)
 }
 
 // SemidailyForecast ...
@@ -108,14 +135,24 @@ func (c *Client) HourlyForecast() (Forecast, error) {
 	return c.hourlyForecast, nil
 }
 
-// ObservationForDefaultStation ...
-func (c *Client) ObservationForDefaultStation() (Observation, error) {
+// LatestObservationForDefaultStation ...
+func (c *Client) LatestObservationForDefaultStation() (Observation, error) {
+	// TODO: Figure out how to recrod last retrieved time for each.
+	// Perhaps these should be within c.stations[i].observation.
+	// That would likeley be best.
+	// The interface of these private attributes doesn't matter as much.
 	return c.observations[c.defaultStationID], nil
 }
 
-// ObservationForStation ...
-func (c *Client) ObservationForStation(id string) (Observation, error) {
+// LatestObservationForStation ...
+func (c *Client) LatestObservationForStation(id string) (Observation, error) {
 	return c.observations[id], nil
+}
+
+// setBaseURLString ...
+func (c *Client) setBaseURLString(url string) error {
+	c.baseURLString = url
+	return nil
 }
 
 // setGridpointFromPoint ...
@@ -134,13 +171,13 @@ func (c *Client) setStationsFromGridpont() error {
 	if err != nil {
 		return err
 	}
-	// setDefaultStationID() here to stns[0].ID
 	c.stations = stns
 	return nil
 }
 
 // setDefaultStationID ...
-func (c *Client) setDefaultStationID() error {
+func (c *Client) setDefaultStationID(id string) error {
+	c.defaultStationID = c.stations[0].ID
 	return nil
 }
 
