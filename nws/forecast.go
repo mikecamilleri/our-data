@@ -21,12 +21,26 @@ import (
 
 // Forecast ...
 type Forecast struct {
-	LastUpdated time.Time
-	Periods     []Period
+	TimeForecast  time.Time
+	TimeRetrieved time.Time
+	Gridpoint     Gridpoint
+	Periods       []Period
 }
 
 // Period ...
 type Period struct {
+	Number           int
+	Name             string
+	TimeStart        time.Time
+	TimeEnd          time.Time
+	IsDaytime        bool
+	Temperature      ValueUnit
+	TemperatureTrend string
+	WindSpeedMin     ValueUnit
+	WindSpeedMax     ValueUnit
+	WindDirection    string
+	ForecastShort    string
+	ForecastDetailed string
 }
 
 // getSemidailyForcastsForGridpoint ...

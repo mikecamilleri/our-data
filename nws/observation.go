@@ -21,10 +21,11 @@ import (
 
 // Observation ...
 type Observation struct {
-	METAR                     string
-	Station                   string
-	TimeCollected             time.Time
-	TimeRetrieved             time.Time
+	METAR         string
+	StationID     string
+	TimeObserved  time.Time
+	TimeRetrieved time.Time
+
 	Temperature               ValueUnit
 	Dewpoint                  ValueUnit
 	WindDirection             ValueUnit
@@ -33,8 +34,8 @@ type Observation struct {
 	BarometricPressure        ValueUnit
 	SeaLevelPressure          ValueUnit
 	Visibility                ValueUnit
-	MaxTemperatureLast24Hours ValueUnit
-	MinTemperatureLast24Hours ValueUnit
+	TemperatureLast24HoursMin ValueUnit
+	TemperatureLast24HoursMax ValueUnit
 	PrecipitationLastHour     ValueUnit
 	PrecipitationLast3Hours   ValueUnit
 	PrecipitationLast6Hours   ValueUnit
