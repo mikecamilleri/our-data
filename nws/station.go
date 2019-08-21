@@ -20,7 +20,9 @@ import (
 
 // Station ...
 type Station struct {
-	ID string // callsign
+	ID    string // callsign
+	Name  string
+	Point Point
 }
 
 // getStationsForGridpoint ...

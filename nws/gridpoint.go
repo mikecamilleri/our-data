@@ -21,6 +21,8 @@ type Gridpoint struct {
 	WFO   string // weather forecast office
 	GridX int
 	GridY int
+	City  string
+	State string
 }
 
 // getGridpointFromPoint ...
