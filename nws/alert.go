@@ -16,10 +16,118 @@ package nws
 
 import (
 	"net/http"
+	"time"
+)
+
+var (
+	// AlertStatuses ...
+	AlertStatuses = map[string]string{
+		"Actual":   "Actionable by all targeted recipients",
+		"Exercise": "Actionable only by designated exercise participants; exercise identifier SHOULD appear in <note>",
+		"System":   "For messages that support alert network internal functions",
+		"Test":     "Technical testing only, all recipients disregard",
+		"Draft":    "A preliminary template or draft, not actionable in its current form",
+	}
+
+	// AlertMessageTypes ...
+	AlertMessageTypes = map[string]string{
+		"Alert":  "Initial information requiring attention by targeted recipients",
+		"Update": "Updates and supercedes the earlier message(s) identified in <references>",
+		"Cancel": "Cancels the earlier message(s) identified in <references>",
+		"Ack":    "Acknowledges receipt and acceptance of the message(s) identified in <references>",
+		"Error":  "Indicates rejection of the message(s) identified in <references>; explanation SHOULD appear in <note>",
+	}
+
+	//AlertCategories ...
+	AlertCategories = map[string]string{
+		"Geo":       "Geophysical (inc. landslide)",
+		"Met":       "Meteorological (inc. flood)",
+		"Safety":    "General emergency and public safety",
+		"Security":  "Law enforcement, military, homeland and local/private security",
+		"Rescue":    "Rescue and recovery",
+		"Fire":      "Fire suppression and rescue",
+		"Health":    "Medical and public health",
+		"Env":       "Pollution and other environmental",
+		"Transport": "Public and private transportation",
+		"Infra":     "Utility, telecommunication, other non-transport infrastructure",
+		"CBRNE":     "Chemical, Biological, Radiological, Nuclear or High-Yield Explosive threat or attack",
+		"Other":     "Other events",
+	}
+
+	// AlertSeverities ...
+	AlertSeverities = map[string]string{
+		"Extreme":  "Extraordinary threat to life or property",
+		"Severe":   "Significant threat to life or property",
+		"Moderate": "Possible threat to life or property",
+		"Minor":    "Minimal to no known threat to life or property",
+		"Unknown":  "Severity unknown",
+	}
+
+	// AlertCertainties ...
+	AlertCertainties = map[string]string{
+		"Observed": "Determined to have occurred or to be ongoing",
+		"Likely":   "Likely (p > ~50%)",
+		"Possible": "Possible but not likely (p <= ~50%)",
+		"Unlikely": "Not expected to occur (p ~ 0)",
+		"Unknown":  "Certainty unknown",
+	}
+
+	// AlertUrgencies ...
+	AlertUrgencies = map[string]string{
+		"Immediate": "Responsive action SHOULD be taken immediately",
+		"Expected":  "Responsive action SHOULD be taken soon (within next hour)",
+		"Future":    "Responsive action SHOULD be taken in the near future",
+		"Past":      "Responsive action is no longer required",
+		"Unknown":   "Urgency not known",
+	}
+
+	// AlertResponses ...
+	AlertResponses = map[string]string{
+		"Shelter":  "Take shelter in place or per <instruction>",
+		"Evacuate": "Relocate as instructed in the <instruction>",
+		"Prepare":  "Make preparations per the <instruction>",
+		"Execute":  "Execute a pre-planned activity identified in <instruction>",
+		"Avoid":    "Avoid the subject event as per the <instruction>",
+		"Monitor":  "Attend to information sources as described in <instruction>",
+		"Assess":   "Evaluate the information in this message",
+		"AllClear": "The subject event no longer poses a threat or concern and any follow on action is described in <instruction>",
+		"None":     "No action recommended",
+	}
+
+	// AlertScopes = map[string]string{
+	// 	"Public":     "For general dissemination to unrestricted audiences",
+	// 	"Restricted": "For dissemination only to users with a known operational requirement (see <restriction>)",
+	// 	"Private":    "For dissemination only to specified addresses (see <addresses>)",
+	// }
 )
 
 // Alert ...
 type Alert struct {
+	ID string
+
+	TimeRetrieved time.Time // when the client retrieved this alert
+	TimeSent      time.Time // when this alert was sent
+	TimeEffective time.Time // when the information in this messgae becomes effective
+	TimeExpires   time.Time // when the information in this messgae expires
+	TimeOnset     time.Time // when the beginning of the hazard is expected
+	TimeEnds      time.Time // not in CAP spec, likely when the end of the hazard is expected
+
+	SenderID   string // appears to usually be an email address
+	SenderName string
+
+	Status      string
+	MessageType string
+	Category    string
+	Severity    string
+	Certainty   string
+	Urgency     string
+	Event       string
+
+	AreaDescription string
+	Headline        string
+	Description     string
+	Instruction     string
+	Response        string
 }
 
 // getActiveAlertsForPoint ...
