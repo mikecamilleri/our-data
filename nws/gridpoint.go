@@ -16,6 +16,8 @@ package nws
 
 import "net/http"
 
+const getGridpointForPointEndpointURLStringFmt = "points/%f,%f" // lat, lon
+
 // Gridpoint ...
 type Gridpoint struct {
 	WFO   string // weather forecast office
@@ -26,7 +28,7 @@ type Gridpoint struct {
 }
 
 // getGridpointFromPoint ...
-func getGridpointForPoint(httpClinet *http.Client, point Point) (*Gridpoint, error) {
+func getGridpointForPoint(httpClinet *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
 	return nil, nil
 }
 

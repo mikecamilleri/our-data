@@ -34,8 +34,14 @@ type ValueUnit struct {
 
 // Client ...
 type Client struct {
-	httpClient    *http.Client
-	baseURLString string
+	httpClient *http.Client
+	// From: https://www.weather.gov/documentation/services-web-api
+	// "A User Agent is required to identify your application. This string can
+	// be anything, and the more unique to your application the less likely it
+	// will be affected by a security event. If you include contact information
+	// (website or email), we can contact you if your string is associated to a
+	// security event. This will be replaced with an API key in the future."
+	httpUserAgentString string
 
 	point            Point
 	gridpoint        Gridpoint
@@ -52,9 +58,10 @@ type Client struct {
 }
 
 // NewClientFromCoordinates ...
-func NewClientFromCoordinates(httpClient *http.Client, lat float64, lon float64) (*Client, error) {
+func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString string, lat float64, lon float64) (*Client, error) {
 	c := &Client{
-		httpClient: &http.Client{},
+		httpClient:          &http.Client{},
+		httpUserAgentString: httpUserAgentString,
 
 		// point is rounded to four decimal places because the API requires
 		// that requests be made with at most four decimal places. The API will
@@ -64,10 +71,6 @@ func NewClientFromCoordinates(httpClient *http.Client, lat float64, lon float64)
 			Lat: math.Round(lat*10000) / 10000,
 			Lon: math.Round(lon*10000) / 10000,
 		},
-	}
-
-	if err := c.setBaseURLString(baseURLString); err != nil {
-		return nil, err
 	}
 
 	if err := c.setGridpointFromPoint(); err != nil {
@@ -83,18 +86,6 @@ func NewClientFromCoordinates(httpClient *http.Client, lat float64, lon float64)
 	}
 
 	return c, nil
-}
-
-// BaseURLString ...
-func (c *Client) BaseURLString() string {
-	return c.baseURLString
-}
-
-// SetBaseURLString sets the base URL used by the client. The base URL is set
-// to the default during Client construction. This is in place to facilitate
-// testing and so that the user can change the base URL if the NWS does.
-func (c *Client) SetBaseURLString(url string) error {
-	return c.setBaseURLString(url)
 }
 
 // Point ...
@@ -160,12 +151,6 @@ func (c *Client) LatestObservationForStation(id string) (Observation, error) {
 	return c.observations[id], nil
 }
 
-// setBaseURLString ...
-func (c *Client) setBaseURLString(url string) error {
-	c.baseURLString = url
-	return nil
-}
-
 // setGridpointFromPoint ...
 func (c *Client) setGridpointFromPoint() error {
 	gp, err := getGridpointForPoint(c.httpClient, c.point)
@@ -193,7 +178,15 @@ func (c *Client) setDefaultStationID(id string) error {
 }
 
 // get ...
-func (c *Client) get(path string, query url.Values) (*http.Response, error) {
-
-	return nil, nil
+// It is the caller's responsibility to read and close the http.Response.Body.
+func get(httpClient *http.Client, httpUserAgentString string, endpoint string, query url.Values) (*http.Response, error) {
+	req, err := http.NewRequest("GET", baseURLString+endpoint, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("User-Agent", httpUserAgentString)
+	if query != nil {
+		req.URL.RawQuery = query.Encode()
+	}
+	return httpClient.Do(req)
 }

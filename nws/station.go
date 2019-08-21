@@ -26,7 +26,7 @@ type Station struct {
 }
 
 // getStationsForGridpoint ...
-func getStationsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) ([]Station, error) {
+func getStationsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
 	return nil, nil
 }
 

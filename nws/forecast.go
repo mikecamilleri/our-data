@@ -48,7 +48,7 @@ type Period struct {
 }
 
 // getSemidailyForcastsForGridpoint ...
-func getSemidailyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (*Forecast, error) {
+func getSemidailyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	return nil, nil
 }
 
