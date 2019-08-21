@@ -21,18 +21,22 @@ import (
 
 // Forecast ...
 type Forecast struct {
-	TimeForecast  time.Time
+	Gridpoint Gridpoint
+
 	TimeRetrieved time.Time
-	Gridpoint     Gridpoint
-	Periods       []Period
+	TimeForecast  time.Time
+
+	Periods []Period
 }
 
 // Period ...
 type Period struct {
-	Number           int
-	Name             string
-	TimeStart        time.Time
-	TimeEnd          time.Time
+	Number int
+	Name   string
+
+	TimeStart time.Time
+	TimeEnd   time.Time
+
 	IsDaytime        bool
 	Temperature      ValueUnit
 	TemperatureTrend string

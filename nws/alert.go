@@ -93,12 +93,6 @@ var (
 		"AllClear": "The subject event no longer poses a threat or concern and any follow on action is described in <instruction>",
 		"None":     "No action recommended",
 	}
-
-	// AlertScopes = map[string]string{
-	// 	"Public":     "For general dissemination to unrestricted audiences",
-	// 	"Restricted": "For dissemination only to users with a known operational requirement (see <restriction>)",
-	// 	"Private":    "For dissemination only to specified addresses (see <addresses>)",
-	// }
 )
 
 // Alert ...
@@ -112,22 +106,20 @@ type Alert struct {
 	TimeOnset     time.Time // when the beginning of the hazard is expected
 	TimeEnds      time.Time // not in CAP spec, likely when the end of the hazard is expected
 
-	SenderID   string // appears to usually be an email address
-	SenderName string
-
-	Status      string
-	MessageType string
-	Category    string
-	Severity    string
-	Certainty   string
-	Urgency     string
-	Event       string
-
+	SenderID        string // appears to usually be an email address
+	SenderName      string
+	Status          string // must be a key in AlertStatuses
+	MessageType     string // must be a key in AlertMessageTypes
+	Category        string // must ge a key in AlertCategories
+	Severity        string // must be a key in AlertSeverities
+	Certainty       string // must be a key in AlertCertainties
+	Urgency         string // must be a key in Alert Urgencies
+	Event           string
 	AreaDescription string
 	Headline        string
 	Description     string
 	Instruction     string
-	Response        string
+	Response        string // must be a key in AlerResponses
 }
 
 // getActiveAlertsForPoint ...

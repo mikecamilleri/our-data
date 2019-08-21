@@ -21,10 +21,10 @@ import (
 
 // Observation ...
 type Observation struct {
-	METAR         string
-	StationID     string
-	TimeObserved  time.Time
+	StationID string
+
 	TimeRetrieved time.Time
+	TimeObserved  time.Time
 
 	Temperature               ValueUnit
 	Dewpoint                  ValueUnit
@@ -43,6 +43,8 @@ type Observation struct {
 	WindChill                 ValueUnit
 	HeatIndex                 ValueUnit
 	// CloudLayers
+
+	METAR string // raw METAR string
 }
 
 // getLatestObservationForStation ...
