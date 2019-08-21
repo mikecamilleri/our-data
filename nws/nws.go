@@ -26,6 +26,12 @@ const (
 	baseURLString = "https://api.weather.gov/"
 )
 
+// ValueUnit ...
+type ValueUnit struct {
+	Value float64
+	Unit  string
+}
+
 // Client ...
 type Client struct {
 	httpClient    *http.Client
@@ -108,7 +114,7 @@ func (c *Client) Stations() ([]Station, error) {
 
 // DefaultStationID ...
 func (c *Client) DefaultStationID() (string, error) {
-	return "", nil
+	return c.defaultStationID, nil
 }
 
 // SetDefaultStationID is set to the first station in the list of stations
@@ -117,22 +123,27 @@ func (c *Client) SetDefaultStationID(id string) error {
 	return c.setDefaultStationID(id)
 }
 
+// Alerts ...
+func (c *Client) Alerts(id string) ([]Alert, error) {
+	// update LastRetrieved if there is no error from getActiveAlertsForPoint()
+	// in case of error, still return alerts and log the error?
+	return c.alerts, nil
+}
+
 // SemidailyForecast ...
 func (c *Client) SemidailyForecast() (Forecast, error) {
 	// update LastRetrieved
-	return c.semidailyForecast, nil
-}
-
-// Alerts ...
-func (c *Client) Alerts(id string) ([]Alert, error) {
-	// update LastRetrieved
-	return c.alerts, nil
+	// set value in c
+	f, err := getSemidailyForcastsForGridpoint(c.httpClient, c.gridpoint)
+	return *f, err
 }
 
 // HourlyForecast ...
 func (c *Client) HourlyForecast() (Forecast, error) {
 	// update LastRetrieved
-	return c.hourlyForecast, nil
+	// set value in c
+	f, err := getHourlyForcastsForGridpoint(c.httpClient, c.gridpoint)
+	return *f, err
 }
 
 // LatestObservationForDefaultStation ...

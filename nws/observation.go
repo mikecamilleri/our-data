@@ -16,10 +16,32 @@ package nws
 
 import (
 	"net/http"
+	"time"
 )
 
 // Observation ...
 type Observation struct {
+	METAR                     string
+	Station                   string
+	TimeCollected             time.Time
+	TimeRetrieved             time.Time
+	Temperature               ValueUnit
+	Dewpoint                  ValueUnit
+	WindDirection             ValueUnit
+	WindSpeed                 ValueUnit
+	WindGust                  ValueUnit
+	BarometricPressure        ValueUnit
+	SeaLevelPressure          ValueUnit
+	Visibility                ValueUnit
+	MaxTemperatureLast24Hours ValueUnit
+	MinTemperatureLast24Hours ValueUnit
+	PrecipitationLastHour     ValueUnit
+	PrecipitationLast3Hours   ValueUnit
+	PrecipitationLast6Hours   ValueUnit
+	RelativeHumidity          ValueUnit
+	WindChill                 ValueUnit
+	HeatIndex                 ValueUnit
+	// CloudLayers
 }
 
 // getLatestObservationForStation ...
