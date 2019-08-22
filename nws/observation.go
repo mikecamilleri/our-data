@@ -48,7 +48,7 @@ type Observation struct {
 }
 
 // getLatestObservationForStation ...
-func getLatestObservationForStation(httpClinet *http.Client, httpUserAgentString string, station string) (*Observation, error) {
+func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString string, station string) (*Observation, error) {
 	return nil, nil
 }
 

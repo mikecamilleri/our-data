@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 const getGridpointForPointEndpointURLStringFmt = "points/%f,%f" // lat, lon
@@ -70,7 +71,7 @@ func newGridpointFromPointRespBody(respBody []byte) (*Gridpoint, error) {
 	if len(gpRaw.Properties.CWA) != 3 {
 		return nil, fmt.Errorf("WFO/CWA must be three characters: \"%s\" is %d characters", gpRaw.Properties.CWA, len(gpRaw.Properties.CWA))
 	}
-	gp.WFO = gpRaw.Properties.CWA
+	gp.WFO = strings.ToUpper(gpRaw.Properties.CWA)
 	gp.GridX, err = strconv.Atoi(gpRaw.Properties.GridX)
 	if err != nil {
 		return nil, fmt.Errorf("GridX must be an integer: \"%s\"", gpRaw.Properties.GridX)

@@ -123,7 +123,7 @@ type Alert struct {
 }
 
 // getActiveAlertsForPoint ...
-func getActiveAlertsForPoint(httpClinet *http.Client, httpUserAgentString string, point Point) ([]Alert, error) {
+func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string, point Point) ([]Alert, error) {
 	return nil, nil
 }
 

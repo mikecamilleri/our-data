@@ -192,10 +192,10 @@ func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("User-Agent", httpUserAgentString)
 	if query != nil {
 		req.URL.RawQuery = query.Encode()
 	}
+	req.Header.Set("User-Agent", httpUserAgentString)
 
 	// make the request, return error if error
 	// TODO: handle errors like client side timeouts

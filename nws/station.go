@@ -15,8 +15,14 @@
 package nws
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 )
+
+const getStationsForGridpointEndpointURLStringFmt = "gridpoints/%s/%f,%f/stations" // lat, lon
 
 // Station ...
 type Station struct {
@@ -26,13 +32,49 @@ type Station struct {
 }
 
 // getStationsForGridpoint ...
-func getStationsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
-	return nil, nil
+func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
+	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getStationsForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	if err != nil {
+		return nil, err
+	}
+	return newStationsFromStationsRespBody(respBody)
 }
 
 // newStationsFromStationsRespBody ..
 func newStationsFromStationsRespBody(respBody []byte) ([]Station, error) {
-	return nil, nil
+	// unmarshal the body into a temporary struct
+	stnsRaw := struct {
+		Features []struct {
+			Geometry struct {
+				Coordinates []string // lon, lat (annoying)
+			}
+			Properties struct {
+				StationIdentifier string // callsign
+				Name              string
+			}
+		}
+	}{}
+	if err := json.Unmarshal(respBody, stnsRaw); err != nil {
+		return nil, err
+	}
+
+	// validate and build returned slice
+	var stns []Station
+	for _, sRaw := range stnsRaw.Features {
+		if sRaw.Properties.StationIdentifier == "" {
+			continue // skip if no callsign
+		}
+		s := Station{
+			Name: sRaw.Properties.Name,
+			ID:   strings.ToUpper(sRaw.Properties.StationIdentifier),
+		}
+		if len(sRaw.Geometry.Coordinates) == 2 {
+			s.Point.Lon, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[1], 64)
+			s.Point.Lat, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[0], 64)
+		}
+	}
+
+	return stns, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

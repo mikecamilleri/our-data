@@ -48,12 +48,12 @@ type Period struct {
 }
 
 // getSemidailyForcastsForGridpoint ...
-func getSemidailyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+func getSemidailyForcastsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	return nil, nil
 }
 
 // getHourlyForcastsForGridpoint ...
-func getHourlyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+func getHourlyForcastsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	return nil, nil
 }
 
