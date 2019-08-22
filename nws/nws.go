@@ -16,6 +16,8 @@
 package nws
 
 import (
+	"errors"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
@@ -181,9 +183,11 @@ func (c *Client) setDefaultStationID(id string) error {
 	return nil
 }
 
-// get ...
-// It is the caller's responsibility to read and close the http.Response.Body.
-func get(httpClient *http.Client, httpUserAgentString string, endpoint string, query url.Values) (*http.Response, error) {
+// doAPIRequest both makes a GET request to the specified endpoint and handles
+// non-200 responses. get will only return an *http.Rsponse with a 200 status
+// code.
+func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint string, query url.Values) ([]byte, error) {
+	// build the request
 	req, err := http.NewRequest("GET", baseURLString+endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -192,5 +196,28 @@ func get(httpClient *http.Client, httpUserAgentString string, endpoint string, q
 	if query != nil {
 		req.URL.RawQuery = query.Encode()
 	}
-	return httpClient.Do(req)
+
+	// make the request, return error if error
+	// TODO: handle errors like client side timeouts
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	// see below for why this is done here instead of after checking status
+	// code. Setting this up for TODOs below.
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// check status code, return error if not 200
+	// TODO: handle errors like server side timeouts
+	// TODO: do something with the response body if error
+	if resp.StatusCode != 200 {
+		return nil, errors.New(resp.Status)
+	}
+
+	return respBody, nil
 }

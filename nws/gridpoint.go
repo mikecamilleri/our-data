@@ -17,7 +17,6 @@ package nws
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 )
@@ -33,28 +32,17 @@ type Gridpoint struct {
 	State string
 }
 
-// getGridpointFromPoint ...
-func getGridpointForPoint(httpClinet *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
-	resp, err := get(httpClinet, httpUserAgentString, fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon), nil)
+// getGridpointForPoint ...
+func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
+	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon), nil)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		// handle error responses here
-	}
-
-	bodyJSON, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return newGridpointFromPointResponseBodyJSON(bodyJSON)
+	return newGridpointFromPointResponseBodyJSON(respBody)
 }
 
 // newGridpointFromPointResponseBody ...
-func newGridpointFromPointResponseBodyJSON(body []byte) (*Gridpoint, error) {
+func newGridpointFromPointResponseBodyJSON(bodyJSON []byte) (*Gridpoint, error) {
 	// unmarshal the body into a temporary struct
 	gpRaw := struct {
 		Properties struct {
@@ -69,7 +57,7 @@ func newGridpointFromPointResponseBodyJSON(body []byte) (*Gridpoint, error) {
 			}
 		}
 	}{}
-	if err := json.Unmarshal(body, gpRaw); err != nil {
+	if err := json.Unmarshal(bodyJSON, gpRaw); err != nil {
 		return nil, err
 	}
 
