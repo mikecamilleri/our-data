@@ -35,12 +35,16 @@ type ValueUnit struct {
 // Client ...
 type Client struct {
 	httpClient *http.Client
-	// From: https://www.weather.gov/documentation/services-web-api
-	// "A User Agent is required to identify your application. This string can
-	// be anything, and the more unique to your application the less likely it
-	// will be affected by a security event. If you include contact information
-	// (website or email), we can contact you if your string is associated to a
-	// security event. This will be replaced with an API key in the future."
+	// The NWS API uses User-Agent as a quasi-auth type thing and for security
+	// logging. It needs to be set in each request. There is no default becuase
+	// it should be unique to your application.
+	//   "A User Agent is required to identify your application. This string can
+	//   be anything, and the more unique to your application the less likely it
+	//   will be affected by a security event. If you include contact
+	//   information (website or email), we can contact you if your string is
+	//   associated to a security event. This will be replaced with an API key
+	//   in the future."
+	//   -- https://www.weather.gov/documentation/services-web-api
 	httpUserAgentString string
 
 	point            Point
@@ -125,7 +129,7 @@ func (c *Client) Alerts(id string) ([]Alert, error) {
 func (c *Client) SemidailyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
-	f, err := getSemidailyForcastsForGridpoint(c.httpClient, c.gridpoint)
+	f, err := getSemidailyForcastsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	return *f, err
 }
 
@@ -133,7 +137,7 @@ func (c *Client) SemidailyForecast() (Forecast, error) {
 func (c *Client) HourlyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
-	f, err := getHourlyForcastsForGridpoint(c.httpClient, c.gridpoint)
+	f, err := getHourlyForcastsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	return *f, err
 }
 
@@ -153,7 +157,7 @@ func (c *Client) LatestObservationForStation(id string) (Observation, error) {
 
 // setGridpointFromPoint ...
 func (c *Client) setGridpointFromPoint() error {
-	gp, err := getGridpointForPoint(c.httpClient, c.point)
+	gp, err := getGridpointForPoint(c.httpClient, c.httpUserAgentString, c.point)
 	if err != nil {
 		return err
 	}
@@ -163,7 +167,7 @@ func (c *Client) setGridpointFromPoint() error {
 
 // setStationsFromGridpont ...
 func (c *Client) setStationsFromGridpont() error {
-	stns, err := getStationsForGridpoint(c.httpClient, c.gridpoint)
+	stns, err := getStationsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	if err != nil {
 		return err
 	}

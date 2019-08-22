@@ -14,7 +14,13 @@
 
 package nws
 
-import "net/http"
+import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strconv"
+)
 
 const getGridpointForPointEndpointURLStringFmt = "points/%f,%f" // lat, lon
 
@@ -29,7 +35,64 @@ type Gridpoint struct {
 
 // getGridpointFromPoint ...
 func getGridpointForPoint(httpClinet *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
-	return nil, nil
+	resp, err := get(httpClinet, httpUserAgentString, fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon), nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		// handle error responses here
+	}
+
+	bodyJSON, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return newGridpointFromPointResponseBodyJSON(bodyJSON)
+}
+
+// newGridpointFromPointResponseBody ...
+func newGridpointFromPointResponseBodyJSON(body []byte) (*Gridpoint, error) {
+	// unmarshal the body into a temporary struct
+	gpRaw := struct {
+		Properties struct {
+			CWA              string
+			GridX            string
+			GridY            string
+			RelativeLocation struct {
+				Properties struct {
+					City  string
+					State string
+				}
+			}
+		}
+	}{}
+	if err := json.Unmarshal(body, gpRaw); err != nil {
+		return nil, err
+	}
+
+	// validate and build returned value
+	var err error
+	gp := Gridpoint{
+		City:  gpRaw.Properties.RelativeLocation.Properties.City,
+		State: gpRaw.Properties.RelativeLocation.Properties.State,
+	}
+	if len(gpRaw.Properties.CWA) != 3 {
+		return nil, fmt.Errorf("WFO/CWA must be three characters: \"%s\" is %d characters", gpRaw.Properties.CWA, len(gpRaw.Properties.CWA))
+	}
+	gp.WFO = gpRaw.Properties.CWA
+	gp.GridX, err = strconv.Atoi(gpRaw.Properties.GridX)
+	if err != nil {
+		return nil, fmt.Errorf("GridX must be an integer: \"%s\"", gpRaw.Properties.GridX)
+	}
+	gp.GridY, err = strconv.Atoi(gpRaw.Properties.GridY)
+	if err != nil {
+		return nil, fmt.Errorf("GridY must be an integer: \"%s\"", gpRaw.Properties.GridY)
+	}
+
+	return &gp, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -53,7 +53,7 @@ func getSemidailyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentStri
 }
 
 // getHourlyForcastsForGridpoint ...
-func getHourlyForcastsForGridpoint(httpClinet *http.Client, gridpoint Gridpoint) (*Forecast, error) {
+func getHourlyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	return nil, nil
 }
 
