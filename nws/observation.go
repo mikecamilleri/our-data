@@ -52,7 +52,10 @@ func getLatestObservationForStation(httpClinet *http.Client, httpUserAgentString
 	return nil, nil
 }
 
-// newObservationFromJSON ?
+// newObservationFromStationObservationRespBody ...
+func newObservationFromStationObservationRespBody(respBody []byte) (*Observation, error) {
+	return nil, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXAMPLE request and responses below.

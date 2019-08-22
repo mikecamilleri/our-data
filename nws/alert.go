@@ -127,6 +127,11 @@ func getActiveAlertsForPoint(httpClinet *http.Client, httpUserAgentString string
 	return nil, nil
 }
 
+// newAlertsFromAlertsRespBody ...
+func newAlertsFromAlertsRespBody(respBody []byte) ([]Alert, error) {
+	return nil, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // EXAMPLE request and responses below.
 // - note different location (needed a place with an active alert)

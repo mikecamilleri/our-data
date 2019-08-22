@@ -38,11 +38,11 @@ func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, p
 	if err != nil {
 		return nil, err
 	}
-	return newGridpointFromPointResponseBodyJSON(respBody)
+	return newGridpointFromPointRespBody(respBody)
 }
 
 // newGridpointFromPointResponseBody ...
-func newGridpointFromPointResponseBodyJSON(bodyJSON []byte) (*Gridpoint, error) {
+func newGridpointFromPointRespBody(respBody []byte) (*Gridpoint, error) {
 	// unmarshal the body into a temporary struct
 	gpRaw := struct {
 		Properties struct {
@@ -57,7 +57,7 @@ func newGridpointFromPointResponseBodyJSON(bodyJSON []byte) (*Gridpoint, error) 
 			}
 		}
 	}{}
-	if err := json.Unmarshal(bodyJSON, gpRaw); err != nil {
+	if err := json.Unmarshal(respBody, gpRaw); err != nil {
 		return nil, err
 	}
 

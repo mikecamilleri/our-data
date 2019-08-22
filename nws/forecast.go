@@ -57,6 +57,11 @@ func getHourlyForcastsForGridpoint(httpClinet *http.Client, httpUserAgentString 
 	return nil, nil
 }
 
+// newForecastFromForecastRespBody ...
+func newForecastFromForecastRespBody(respBody []byte) (*Forecast, error) {
+	return nil, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // EXAMPLE request and responses below.
 // - semidaily and hourly

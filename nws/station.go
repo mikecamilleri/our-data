@@ -30,7 +30,10 @@ func getStationsForGridpoint(httpClinet *http.Client, httpUserAgentString string
 	return nil, nil
 }
 
-// newObservationFromJSON ?
+// newStationsFromStationsRespBody ..
+func newStationsFromStationsRespBody(respBody []byte) ([]Station, error) {
+	return nil, nil
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXAMPLE request and responses below.
