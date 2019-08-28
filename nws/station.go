@@ -69,8 +69,8 @@ func newStationsFromStationsRespBody(respBody []byte) ([]Station, error) {
 			ID:   strings.ToUpper(sRaw.Properties.StationIdentifier),
 		}
 		if len(sRaw.Geometry.Coordinates) == 2 {
-			s.Point.Lon, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[1], 64)
-			s.Point.Lat, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[0], 64)
+			s.Point.Lon, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[0], 64)
+			s.Point.Lat, _ = strconv.ParseFloat(sRaw.Geometry.Coordinates[1], 64)
 		}
 	}
 
