@@ -40,7 +40,7 @@ func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string
 	return newStationsFromStationsRespBody(respBody)
 }
 
-// newStationsFromStationsRespBody ..
+// newStationsFromStationsRespBody ...
 func newStationsFromStationsRespBody(respBody []byte) ([]Station, error) {
 	// unmarshal the body into a temporary struct
 	stnsRaw := struct {
