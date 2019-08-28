@@ -131,7 +131,7 @@ func (c *Client) Alerts(id string) ([]Alert, error) {
 func (c *Client) SemidailyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
-	f, err := getSemidailyForcastsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	f, err := getSemidailyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	return *f, err
 }
 
@@ -139,7 +139,7 @@ func (c *Client) SemidailyForecast() (Forecast, error) {
 func (c *Client) HourlyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
-	f, err := getHourlyForcastsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	f, err := getHourlyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	return *f, err
 }
 

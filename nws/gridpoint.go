@@ -64,22 +64,22 @@ func newGridpointFromPointRespBody(respBody []byte) (*Gridpoint, error) {
 
 	// validate and build returned value
 	var err error
-	gp := Gridpoint{
-		City:  gpRaw.Properties.RelativeLocation.Properties.City,
-		State: gpRaw.Properties.RelativeLocation.Properties.State,
-	}
+	gp := Gridpoint{}
+
+	// must have WFO, gridX, and gridY
 	if len(gpRaw.Properties.CWA) != 3 {
 		return nil, fmt.Errorf("WFO/CWA must be three characters: \"%s\" is %d characters", gpRaw.Properties.CWA, len(gpRaw.Properties.CWA))
 	}
 	gp.WFO = strings.ToUpper(gpRaw.Properties.CWA)
-	gp.GridX, err = strconv.Atoi(gpRaw.Properties.GridX)
-	if err != nil {
+	if gp.GridX, err = strconv.Atoi(gpRaw.Properties.GridX); err != nil {
 		return nil, fmt.Errorf("GridX must be an integer: \"%s\"", gpRaw.Properties.GridX)
 	}
-	gp.GridY, err = strconv.Atoi(gpRaw.Properties.GridY)
-	if err != nil {
+	if gp.GridY, err = strconv.Atoi(gpRaw.Properties.GridY); err != nil {
 		return nil, fmt.Errorf("GridY must be an integer: \"%s\"", gpRaw.Properties.GridY)
 	}
+
+	gp.City = gpRaw.Properties.RelativeLocation.Properties.City
+	gp.State = gpRaw.Properties.RelativeLocation.Properties.State
 
 	return &gp, nil
 }

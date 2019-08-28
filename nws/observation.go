@@ -171,7 +171,7 @@ func newObservationFromStationObservationRespBody(respBody []byte) (*Observation
 		return nil, err
 	}
 
-	// skip any properties that are null, malformed, or have unrecognized units
+	// ignore any properties that are null, malformed, or have unrecognized units
 	v, err = strconv.ParseFloat(oRaw.Properties.Temperature.Value, 64)
 	u, uok = observationUnitCodes[oRaw.Properties.Temperature.UnitCode]
 	if uok && err == nil {

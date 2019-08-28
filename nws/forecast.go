@@ -15,13 +15,22 @@
 package nws
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
+)
+
+const (
+	getSemidailyForecastForGridpointEndpointURLStringFmt = "gridpoints/%s/%f,%f/forecast"        // wfo, lat, lon
+	getHourlyForecastForGridpointEndpointURLStringFmt    = "gridpoints/%s/%f,%f/forecast/hourly" // wfo, lat, lon
 )
 
 // Forecast ...
 type Forecast struct {
-	Gridpoint Gridpoint
+	// Gridpoint Gridpoint
 
 	TimeRetrieved time.Time
 	TimeForecast  time.Time
@@ -47,19 +56,117 @@ type Period struct {
 	ForecastDetailed string
 }
 
-// getSemidailyForcastsForGridpoint ...
-func getSemidailyForcastsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
-	return nil, nil
+// getSemidailyForceastForGridpoint ...
+func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getSemidailyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	if err != nil {
+		return nil, err
+	}
+	return newForecastFromForecastRespBody(respBody)
 }
 
-// getHourlyForcastsForGridpoint ...
-func getHourlyForcastsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
-	return nil, nil
+// getHourlyForecastForGridpoint ...
+func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getHourlyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	if err != nil {
+		return nil, err
+	}
+	return newForecastFromForecastRespBody(respBody)
 }
 
 // newForecastFromForecastRespBody ...
 func newForecastFromForecastRespBody(respBody []byte) (*Forecast, error) {
-	return nil, nil
+	// unmarshal the body into a temporary struct
+	fRaw := struct {
+		Properties struct {
+			UpdateTime string
+			Periods    []struct {
+				Number           string
+				Name             string
+				StartTime        string
+				EndTime          string
+				IsDaytime        bool
+				Temperature      string
+				TemperatureUnit  string
+				TemperatureTrend string
+				WindSpeed        string // "2 to 7 mph" or "5 mph"
+				WindDirection    string
+				ShortForecast    string
+				DetailedForecast string
+			}
+		}
+	}{}
+	if err := json.Unmarshal(respBody, fRaw); err != nil {
+		return nil, err
+	}
+
+	// validate and build returned slice
+	var err error
+	var f Forecast
+
+	// must have valid times
+	f.TimeRetrieved = time.Now()
+	f.TimeForecast, err = time.Parse(time.RFC3339, fRaw.Properties.UpdateTime)
+	if err != nil {
+		return nil, err
+	}
+
+	// iterate through periods
+	for _, pRaw := range fRaw.Properties.Periods {
+		p := Period{}
+
+		p.Number, err = strconv.Atoi(pRaw.Number)
+		if err != nil {
+			continue // skip if no number
+		}
+		p.TimeStart, err = time.Parse(time.RFC3339, pRaw.StartTime)
+		if err != nil {
+			continue // skip if bad start time
+		}
+		p.TimeEnd, err = time.Parse(time.RFC3339, pRaw.EndTime)
+		if err != nil {
+			continue // skip if bad end time
+		}
+
+		// ignore any missing or invalid fields
+		p.Name = pRaw.Name
+		p.IsDaytime = pRaw.IsDaytime
+
+		tv, err := strconv.ParseFloat(pRaw.Temperature, 64)
+		if err == nil && (pRaw.TemperatureUnit == "F" || pRaw.TemperatureUnit == "C") {
+			p.Temperature.Value = tv
+			p.Temperature.Unit = pRaw.TemperatureUnit
+		}
+
+		p.TemperatureTrend = pRaw.TemperatureTrend
+
+		wsTokens := strings.Split(pRaw.WindSpeed, " ")
+		if len(wsTokens) == 4 {
+			p.WindSpeedMin.Value, err = strconv.ParseFloat(wsTokens[0], 64)
+			if err == nil && wsTokens[3] == "mph" {
+				p.WindSpeedMin.Unit = wsTokens[3]
+			}
+			p.WindSpeedMax.Value, err = strconv.ParseFloat(wsTokens[2], 64)
+			if err == nil && wsTokens[3] == "mph" {
+				p.WindSpeedMax.Unit = wsTokens[3]
+			}
+		}
+		if len(wsTokens) == 2 {
+			p.WindSpeedMin.Value, err = strconv.ParseFloat(wsTokens[0], 64)
+			if err == nil && wsTokens[1] == "mph" {
+				p.WindSpeedMin.Unit = wsTokens[1]
+			}
+			p.WindSpeedMax = p.WindSpeedMin
+		}
+
+		p.WindDirection = pRaw.WindDirection
+		p.ForecastShort = pRaw.ShortForecast
+		p.ForecastDetailed = pRaw.DetailedForecast
+
+		f.Periods = append(f.Periods, p)
+	}
+
+	return &f, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
