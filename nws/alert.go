@@ -15,9 +15,14 @@
 package nws
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
+
+const getActiveAlertsForPointEndpointURLStringFmt = "alerts/active"
 
 var (
 	// AlertStatuses ...
@@ -106,10 +111,13 @@ type Alert struct {
 	TimeOnset     time.Time // when the beginning of the hazard is expected
 	TimeEnds      time.Time // not in CAP spec, likely when the end of the hazard is expected
 
-	SenderID        string // appears to usually be an email address
-	SenderName      string
-	Status          string // must be a key in AlertStatuses
-	MessageType     string // must be a key in AlertMessageTypes
+	SenderID   string // appears to usually be an email address
+	SenderName string
+
+	Status      string   // must be a key in AlertStatuses
+	MessageType string   // must be a key in AlertMessageTypes
+	References  []string // IDs of alerts that this alert affects based on MessageType
+
 	Category        string // must ge a key in AlertCategories
 	Severity        string // must be a key in AlertSeverities
 	Certainty       string // must be a key in AlertCertainties
@@ -123,13 +131,117 @@ type Alert struct {
 }
 
 // getActiveAlertsForPoint ...
+// It may be more efficient to use "zone" or "area", but it isn't clear from
+// the limited documentation whish is most appropriate. "Point" seems like it
+// has the best chance of returning appropriate/relevent alerts.
 func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string, point Point) ([]Alert, error) {
-	return nil, nil
+	var query url.Values
+	query.Add("point", fmt.Sprintf("%s,%s", point.Lat, point.Lon))
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(getActiveAlertsForPointEndpointURLStringFmt),
+		query,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return newAlertsFromAlertsRespBody(respBody)
 }
 
 // newAlertsFromAlertsRespBody ...
 func newAlertsFromAlertsRespBody(respBody []byte) ([]Alert, error) {
-	return nil, nil
+	// unmarshal the body into a temporary struct
+	alertsRaw := struct {
+		Features []struct {
+			Properties struct {
+				ID         string
+				AreaDesc   string
+				References []struct {
+					Identifier string
+				}
+				Sent        string
+				Effective   string
+				Onset       string
+				Expires     string
+				Ends        string
+				Status      string
+				MessageType string
+				Category    string
+				Severity    string
+				Certainty   string
+				Urgency     string
+				Event       string
+				Sender      string
+				SenderName  string
+				Headline    string
+				Description string
+				Instruction string
+				Response    string
+			}
+		}
+	}{}
+	if err := json.Unmarshal(respBody, alertsRaw); err != nil {
+		return nil, err
+	}
+
+	// validate and build returned slice
+	var alerts []Alert
+
+	for _, aRaw := range alertsRaw.Features {
+		var ok bool
+		var a Alert
+
+		if aRaw.Properties.ID == "" {
+			continue // skip if no ID
+		}
+		a.ID = aRaw.Properties.ID
+
+		// generally, ignore bad data
+		// the idea here is to get as complete an alert as possible
+		a.TimeRetrieved = time.Now()
+		a.TimeSent, _ = time.Parse(time.RFC3339, aRaw.Properties.Sent)
+		a.TimeEffective, _ = time.Parse(time.RFC3339, aRaw.Properties.Effective)
+		a.TimeExpires, _ = time.Parse(time.RFC3339, aRaw.Properties.Expires)
+		a.TimeOnset, _ = time.Parse(time.RFC3339, aRaw.Properties.Onset)
+		a.TimeEnds, _ = time.Parse(time.RFC3339, aRaw.Properties.Ends)
+
+		a.SenderID = aRaw.Properties.Sender
+		a.SenderName = aRaw.Properties.SenderName
+
+		a.Status = aRaw.Properties.Status
+		a.MessageType = aRaw.Properties.MessageType
+		for _, ref := range aRaw.Properties.References {
+			if ref.Identifier != "" {
+				a.References = append(a.References, ref.Identifier)
+			}
+		}
+
+		if _, ok = AlertCategories[aRaw.Properties.Category]; ok {
+			a.Category = aRaw.Properties.Category
+		}
+		if _, ok = AlertSeverities[aRaw.Properties.Severity]; ok {
+			a.Severity = aRaw.Properties.Severity
+		}
+		if _, ok = AlertCertainties[aRaw.Properties.Certainty]; ok {
+			a.Certainty = aRaw.Properties.Certainty
+		}
+		if _, ok = AlertUrgencies[aRaw.Properties.Urgency]; ok {
+			a.Urgency = aRaw.Properties.Urgency
+		}
+		a.Event = aRaw.Properties.Event
+		a.AreaDescription = aRaw.Properties.AreaDesc
+		a.Headline = aRaw.Properties.Headline
+		a.Description = aRaw.Properties.Description
+		a.Instruction = aRaw.Properties.Instruction
+		if _, ok = AlertResponses[aRaw.Properties.Response]; ok {
+			a.Response = aRaw.Properties.Response
+		}
+
+		alerts = append(alerts, a)
+	}
+
+	return alerts, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////

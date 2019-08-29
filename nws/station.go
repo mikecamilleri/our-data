@@ -33,7 +33,17 @@ type Station struct {
 
 // getStationsForGridpoint ...
 func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
-	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getStationsForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(
+			getStationsForGridpointEndpointURLStringFmt,
+			gridpoint.WFO,
+			gridpoint.GridX,
+			gridpoint.GridY,
+		),
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

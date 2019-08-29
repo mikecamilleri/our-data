@@ -35,7 +35,12 @@ type Gridpoint struct {
 
 // getGridpointForPoint ...
 func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
-	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon), nil)
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon),
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +69,7 @@ func newGridpointFromPointRespBody(respBody []byte) (*Gridpoint, error) {
 
 	// validate and build returned value
 	var err error
-	gp := Gridpoint{}
+	var gp Gridpoint
 
 	// must have WFO, gridX, and gridY
 	if len(gpRaw.Properties.CWA) != 3 {

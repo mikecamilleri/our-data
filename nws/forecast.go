@@ -58,7 +58,17 @@ type Period struct {
 
 // getSemidailyForceastForGridpoint ...
 func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
-	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getSemidailyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(
+			getSemidailyForecastForGridpointEndpointURLStringFmt,
+			gridpoint.WFO,
+			gridpoint.GridX,
+			gridpoint.GridY,
+		),
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}

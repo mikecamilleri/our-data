@@ -64,7 +64,12 @@ type Observation struct {
 
 // getLatestObservationForStation ...
 func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString string, stationID string) (*Observation, error) {
-	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getLatestObeservationForStationEndpointURLStringFmt, stationID), nil)
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(getLatestObeservationForStationEndpointURLStringFmt, stationID),
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +163,7 @@ func newObservationFromStationObservationRespBody(respBody []byte) (*Observation
 	var uok bool
 	var v float64
 	var err error
-	o := Observation{}
+	var o Observation
 
 	// must have valid station ID and times
 	o.StationID = strings.TrimPrefix(oRaw.Properties.Station, "https://api.weather.gov/stations/")
