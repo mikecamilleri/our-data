@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	baseURLString = "https://api.weather.gov/"
+	baseURLString         = "https://api.weather.gov/"
+	defaultThrottleString = "5m"
 )
 
 // ValueUnit ...
@@ -36,7 +37,13 @@ type ValueUnit struct {
 
 // Client ...
 type Client struct {
+	ObservationsThrottle      time.Duration
+	AlertsThrottle            time.Duration
+	SemidailyForecastThrottle time.Duration
+	HourlyForecastThrottle    time.Duration
+
 	httpClient *http.Client
+
 	// The NWS API uses User-Agent as a quasi-auth type thing and for security
 	// logging. It needs to be set in each request. There is no default becuase
 	// it should be unique to your application.
@@ -53,46 +60,71 @@ type Client struct {
 	gridpoint        Gridpoint
 	stations         []Station
 	defaultStationID string
-
+	observations     map[string]struct {
+		observation              Observation // key is stationID
+		observarionLastRetrieved time.Time
+	}
 	alerts                         []Alert
 	alertsLastRetrived             time.Time
 	semidailyForecast              Forecast
 	semidailyForecastLastRetrieved time.Time
 	hourlyForecast                 Forecast
 	hourlyForecastLastRetrieved    time.Time
-	observations                   map[string]Observation // key is stationID
 }
 
 // NewClientFromCoordinates ...
 func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString string, lat float64, lon float64) (*Client, error) {
+	var err error
+
 	c := &Client{
 		httpClient:          &http.Client{},
 		httpUserAgentString: httpUserAgentString,
 
-		// point is rounded to four decimal places because the API requires
-		// that requests be made with at most four decimal places. The API will
-		// 301 redirect, but using four in the first place eliminates the need
-		// for those.
+		// point Lat and Lon are rounded to four decimal places because the API
+		// requires that requests be made with at most four decimal places. The
+		// API will 301 redirect, but using four in the first place eliminates
+		// those extra requests.
 		point: Point{
 			Lat: math.Round(lat*10000) / 10000,
 			Lon: math.Round(lon*10000) / 10000,
 		},
 	}
 
-	if err := c.setGridpointFromPoint(); err != nil {
+	if err = c.setGridpointFromPoint(); err != nil {
 		return nil, err
 	}
 
-	if err := c.setStationsFromGridpont(); err != nil {
+	if err = c.setStationsFromGridpont(); err != nil {
 		return nil, err
 	}
 
-	if err := c.setDefaultStationID(c.stations[0].ID); err != nil {
+	if err = c.setDefaultStationID(c.stations[0].ID); err != nil {
 		return nil, err
 	}
+
+	defaultThrottle, err := time.ParseDuration(defaultThrottleString)
+	if err != nil {
+		return nil, err
+	}
+	c.ObservationsThrottle = defaultThrottle
+	c.AlertsThrottle = defaultThrottle
+	c.SemidailyForecastThrottle = defaultThrottle
+	c.HourlyForecastThrottle = defaultThrottle
 
 	return c, nil
 }
+
+// Need to create separate Update* funtion for Observations, Alerts, and
+// *Forecast. I.e.:
+//
+// func (c *Client) UpdateAlerts() error {}
+// func (c *Client) Alerts() []Alert {}
+//
+// *LastRetrived functions would help the caller know when to request an update
+//
+// Functions that automatically update and return on a channel would be useful
+// too. Not sure if it's best to implement those in the client.
+//
 
 // Point ...
 func (c *Client) Point() (Point, error) {
@@ -149,12 +181,12 @@ func (c *Client) LatestObservationForDefaultStation() (Observation, error) {
 	// Perhaps these should be within c.stations[i].observation.
 	// That would likeley be best.
 	// The interface of these private attributes doesn't matter as much.
-	return c.observations[c.defaultStationID], nil
+	return c.observations[c.defaultStationID].observation, nil
 }
 
 // LatestObservationForStation ...
 func (c *Client) LatestObservationForStation(id string) (Observation, error) {
-	return c.observations[id], nil
+	return c.observations[id].observation, nil
 }
 
 // setGridpointFromPoint ...
