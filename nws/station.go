@@ -24,14 +24,15 @@ import (
 
 const getStationsForGridpointEndpointURLStringFmt = "gridpoints/%s/%f,%f/stations" // wfo, lat, lon
 
-// Station ...
+// A Station represents a single weather station.
 type Station struct {
 	ID    string // callsign
 	Name  string
 	Point Point
 }
 
-// getStationsForGridpoint ...
+// getStationsForGridpoint retrieves from the NWS API a list of stations that
+// are proximal to a particular gridpoint.
 func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
@@ -50,7 +51,8 @@ func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string
 	return newStationsFromStationsRespBody(respBody)
 }
 
-// newStationsFromStationsRespBody ...
+// newStationsFromStationsRespBody returns a slice of stations, given a response
+// body from the NWS API.
 func newStationsFromStationsRespBody(respBody []byte) ([]Station, error) {
 	// unmarshal the body into a temporary struct
 	stnsRaw := struct {

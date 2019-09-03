@@ -28,7 +28,11 @@ const (
 	getHourlyForecastForGridpointEndpointURLStringFmt    = "gridpoints/%s/%f,%f/forecast/hourly" // wfo, lat, lon
 )
 
-// Forecast ...
+// A Forecast represents a forecast for a specific place on Earth returned from
+// the NWS API.
+//
+// Forecasts contain a variable number of Periods, each representing an
+// arbitrary length of time.
 type Forecast struct {
 	// Gridpoint Gridpoint
 
@@ -38,7 +42,8 @@ type Forecast struct {
 	Periods []Period
 }
 
-// Period ...
+// A Period represents the forecast for a particular range of time at a
+// a particular place on Earth.
 type Period struct {
 	Number int
 	Name   string
@@ -56,7 +61,10 @@ type Period struct {
 	ForecastDetailed string
 }
 
-// getSemidailyForceastForGridpoint ...
+// getSemidailyForceastForGridpoint retrieves from the NWS API the latest
+// semni-daily forecast for a particular gridpoint.
+//
+// The NWS tends to refer to semni-daily forecasts simply as "forecast."
 func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
@@ -75,7 +83,8 @@ func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentStri
 	return newForecastFromForecastRespBody(respBody)
 }
 
-// getHourlyForecastForGridpoint ...
+// getHourlyForecastForGridpoint retrieves from the NWS API the latest
+// hourly forecast for a particular gridpoint.
 func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
 	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getHourlyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
 	if err != nil {
@@ -84,7 +93,8 @@ func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString 
 	return newForecastFromForecastRespBody(respBody)
 }
 
-// newForecastFromForecastRespBody ...
+// newForecastFromForecastRespBody returns a Forecast pointer, given a response
+// body from the NWS API.
 func newForecastFromForecastRespBody(respBody []byte) (*Forecast, error) {
 	// unmarshal the body into a temporary struct
 	fRaw := struct {

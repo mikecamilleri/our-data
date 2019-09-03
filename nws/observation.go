@@ -34,7 +34,8 @@ var observationUnitCodes = map[string]string{
 	"unit:percent":        "percent",
 }
 
-// Observation ...
+// A Observation represents the weather at a particular a particular station
+// at a particular point in time returned from the NWS API.
 type Observation struct {
 	StationID string
 
@@ -62,7 +63,8 @@ type Observation struct {
 	METAR string // raw METAR string
 }
 
-// getLatestObservationForStation ...
+// getLatestObservationForStation retrieves from the NWS API the latest
+// observation from a particular station.
 func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString string, stationID string) (*Observation, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
@@ -76,7 +78,8 @@ func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString
 	return newObservationFromStationObservationRespBody(respBody)
 }
 
-// newObservationFromStationObservationRespBody ...
+// newObservationFromStationObservationRespBody returns an Obsevation pointer,
+// given a response body from the NWS API.
 func newObservationFromStationObservationRespBody(respBody []byte) (*Observation, error) {
 	// TODO: Eventually it probably makes sense to just parse the METAR. This
 	// endpoint seems to be converting everything to SI units which doesn't

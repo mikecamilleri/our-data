@@ -25,7 +25,8 @@ import (
 const getActiveAlertsForPointEndpointURLStringFmt = "alerts/active"
 
 var (
-	// AlertStatuses ...
+	// AlertStatuses are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertStatuses = map[string]string{
 		"Actual":   "Actionable by all targeted recipients",
 		"Exercise": "Actionable only by designated exercise participants; exercise identifier SHOULD appear in <note>",
@@ -34,7 +35,8 @@ var (
 		"Draft":    "A preliminary template or draft, not actionable in its current form",
 	}
 
-	// AlertMessageTypes ...
+	// AlertMessageTypes are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertMessageTypes = map[string]string{
 		"Alert":  "Initial information requiring attention by targeted recipients",
 		"Update": "Updates and supercedes the earlier message(s) identified in <references>",
@@ -43,7 +45,8 @@ var (
 		"Error":  "Indicates rejection of the message(s) identified in <references>; explanation SHOULD appear in <note>",
 	}
 
-	//AlertCategories ...
+	//AlertCategories are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertCategories = map[string]string{
 		"Geo":       "Geophysical (inc. landslide)",
 		"Met":       "Meteorological (inc. flood)",
@@ -59,7 +62,8 @@ var (
 		"Other":     "Other events",
 	}
 
-	// AlertSeverities ...
+	// AlertSeverities are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertSeverities = map[string]string{
 		"Extreme":  "Extraordinary threat to life or property",
 		"Severe":   "Significant threat to life or property",
@@ -68,7 +72,8 @@ var (
 		"Unknown":  "Severity unknown",
 	}
 
-	// AlertCertainties ...
+	// AlertCertainties are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertCertainties = map[string]string{
 		"Observed": "Determined to have occurred or to be ongoing",
 		"Likely":   "Likely (p > ~50%)",
@@ -77,7 +82,8 @@ var (
 		"Unknown":  "Certainty unknown",
 	}
 
-	// AlertUrgencies ...
+	// AlertUrgencies are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertUrgencies = map[string]string{
 		"Immediate": "Responsive action SHOULD be taken immediately",
 		"Expected":  "Responsive action SHOULD be taken soon (within next hour)",
@@ -86,7 +92,8 @@ var (
 		"Unknown":   "Urgency not known",
 	}
 
-	// AlertResponses ...
+	// AlertResponses are defined in
+	// http://docs.oasis-open.org/emergency/cap/v1.2/CAP-v1.2.html
 	AlertResponses = map[string]string{
 		"Shelter":  "Take shelter in place or per <instruction>",
 		"Evacuate": "Relocate as instructed in the <instruction>",
@@ -100,7 +107,7 @@ var (
 	}
 )
 
-// Alert ...
+// An Alert represents a single alert returned from the NWS API.
 type Alert struct {
 	ID string
 
@@ -130,11 +137,12 @@ type Alert struct {
 	Response        string // must be a key in AlerResponses
 }
 
-// getActiveAlertsForPoint ...
-// It may be more efficient to use "zone" or "area", but it isn't clear from
-// the limited documentation whish is most appropriate. "Point" seems like it
-// has the best chance of returning appropriate/relevent alerts.
+// getActiveAlertsForPoint retrieves from the NWS API active alerts for a given
+// point.
 func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string, point Point) ([]Alert, error) {
+	// It may be more efficient to use "zone" or "area", but it isn't clear from
+	// the limited documentation whish is most appropriate. "Point" seems like it
+	// has the best chance of returning appropriate/relevent alerts.
 	var query url.Values
 	query.Add("point", fmt.Sprintf("%s,%s", point.Lat, point.Lon))
 	respBody, err := doAPIRequest(
@@ -149,7 +157,8 @@ func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string
 	return newAlertsFromAlertsRespBody(respBody)
 }
 
-// newAlertsFromAlertsRespBody ...
+// newAlertsFromAlertsRespBody returns a slice of Alerts, given a response body
+// from the NWS API.
 func newAlertsFromAlertsRespBody(respBody []byte) ([]Alert, error) {
 	// unmarshal the body into a temporary struct
 	alertsRaw := struct {

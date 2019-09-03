@@ -24,7 +24,7 @@ import (
 
 const getGridpointForPointEndpointURLStringFmt = "points/%f,%f" // lat, lon
 
-// Gridpoint ...
+// A Gridpoint represents a single NWS gridpoint
 type Gridpoint struct {
 	WFO   string // weather forecast office
 	GridX int
@@ -33,7 +33,8 @@ type Gridpoint struct {
 	State string
 }
 
-// getGridpointForPoint ...
+// getGridpointForPoint retrieves from the NWS API the gridpoint that contains a
+// particular point.
 func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
@@ -47,7 +48,8 @@ func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, p
 	return newGridpointFromPointRespBody(respBody)
 }
 
-// newGridpointFromPointResponseBody ...
+// newGridpointFromPointResponseBody returns a Gridpoint pointer, given a
+// response body from the NWS API.
 func newGridpointFromPointRespBody(respBody []byte) (*Gridpoint, error) {
 	// unmarshal the body into a temporary struct
 	gpRaw := struct {

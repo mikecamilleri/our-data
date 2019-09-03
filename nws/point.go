@@ -14,8 +14,9 @@
 
 package nws
 
-// Point ...
-// `lat` and `lon` are decimal WGS 84 values
+// A Point represents a coordinate point on Earth.
+//
+// `lat` and `lon` are decimal WGS 84 (EPSG:4326) values.
 type Point struct {
 	Lat float64
 	Lon float64
