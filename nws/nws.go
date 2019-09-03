@@ -29,50 +29,67 @@ const (
 	defaultThrottleString = "5m"
 )
 
-// ValueUnit ...
+// A ValueUnit represents a value and its unit (e.g. 32 inches).
 type ValueUnit struct {
 	Value float64
 	Unit  string
 }
 
-// Client ...
+// A Client is used to interact with the NWS API for a specific location on
+// Earth.
 type Client struct {
-	ObservationsThrottle      time.Duration
-	AlertsThrottle            time.Duration
+	// AlertsThrottle represeents the minimum time that must elapse between
+	// updating the active alerts.
+	AlertsThrottle time.Duration
+
+	// SemidailyForecastThrottle represeents the minimum time that must elapse
+	// between updating the semi-daily forecast.
 	SemidailyForecastThrottle time.Duration
-	HourlyForecastThrottle    time.Duration
 
-	httpClient *http.Client
+	// HourlyForecastThrottle represeents the minimum time that must elapse
+	// between updating the hourly forecast.
+	HourlyForecastThrottle time.Duration
 
-	// The NWS API uses User-Agent as a quasi-auth type thing and for security
-	// logging. It needs to be set in each request. There is no default becuase
-	// it should be unique to your application.
-	//   "A User Agent is required to identify your application. This string can
-	//   be anything, and the more unique to your application the less likely it
-	//   will be affected by a security event. If you include contact
-	//   information (website or email), we can contact you if your string is
-	//   associated to a security event. This will be replaced with an API key
-	//   in the future."
-	//   -- https://www.weather.gov/documentation/services-web-api
-	httpUserAgentString string
+	// ObservationsThrottle represents the minimum time that must elapse between
+	// updating the latest observation for any station.
+	ObservationsThrottle time.Duration
 
-	point            Point
-	gridpoint        Gridpoint
-	stations         []Station
-	defaultStationID string
-	observations     map[string]struct {
-		observation              Observation // key is stationID
-		observarionLastRetrieved time.Time
-	}
+	// TODO: the channels below will be used by Auto* functions.
+	AlertChan             chan []Alert
+	SemidailyForecastChan chan Forecast
+	HourlyForecastChan    chan Forecast
+	ObservationChans      map[string]chan Observation
+
+	httpClient                     *http.Client
+	httpUserAgentString            string
+	point                          Point
+	gridpoint                      Gridpoint
+	stations                       []Station
+	defaultStationID               string
 	alerts                         []Alert
 	alertsLastRetrived             time.Time
 	semidailyForecast              Forecast
 	semidailyForecastLastRetrieved time.Time
 	hourlyForecast                 Forecast
 	hourlyForecastLastRetrieved    time.Time
+	observations                   map[string]struct {
+		observation              Observation
+		observarionLastRetrieved time.Time
+	} // the observations key is a station ID
 }
 
-// NewClientFromCoordinates ...
+// NewClientFromCoordinates creates a new client given a WGS 84 (EPSG:4326)
+// latitude and longitide.
+//
+// httpUserAgentString can be set to anything. The NWS API uses User-Agent as a
+// quasi-auth type thing and for security logging. There is no default becuase
+// it should be unique to your application.
+//   "A User Agent is required to identify your application. This string can be
+//   anything, and the more unique to your application the less likely it will
+//   be affected by a security event. If you include contact information
+//   (website or email), we can contact you if your string is associated to a
+//   security event. This will be replaced with an API key in the future."
+//   -- https://www.weather.gov/documentation/services-web-api
 func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString string, lat float64, lon float64) (*Client, error) {
 	var err error
 
@@ -114,64 +131,55 @@ func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString strin
 	return c, nil
 }
 
-// Need to create separate Update* funtion for Observations, Alerts, and
-// *Forecast. I.e.:
-//     func (c *Client) UpdateAlerts() error {}
-//     func (c *Client) Alerts() []Alert {}
-//
-// Update* functions will do the work of actually updating the data in the
-// in the struct. If it is too soon to update based on the throttle, then
-// an error will be returned, possibly containing the earliest time Update*
-// should be called again
-//    var err error
-//    var alerts []Alert
-//    err = UpdateAlerts()
-//    if err != nil {
-//        // handle error
-//    } else {
-//        alerts = Alert()
-//    }
+// TODO:
 //
 // *LastRetrived functions would help the caller know when to request an update
 //
 // Also create Auto* functions that automatically update and send new data
 // on a channel
+//     - add channels to client
 //
 
-// Point ...
+// Point returns the Point for this Client.
 func (c *Client) Point() (Point, error) {
 	return c.point, nil
 }
 
-// Gridpoint ...
+// Gridpoint returns the Gridpoint for this Client.
 func (c *Client) Gridpoint() (Gridpoint, error) {
 	return c.gridpoint, nil
 }
 
-// Stations ...
+// Stations returns the list of weather stations for this client.
+//
+// These appear to be ordered based on proximity to the Point used to retrieve
+// them, but this isn't documented.
 func (c *Client) Stations() ([]Station, error) {
 	return c.stations, nil
 }
 
-// DefaultStationID ...
+// DefaultStationID returns the ID of the default weather station for this
+// Client
 func (c *Client) DefaultStationID() (string, error) {
 	return c.defaultStationID, nil
 }
 
-// SetDefaultStationID is set to the first station in the list of stations
-// returned when the Client is constructed.
+// SetDefaultStationID changes the default station ID.
 func (c *Client) SetDefaultStationID(id string) error {
 	return c.setDefaultStationID(id)
 }
 
-// Alerts ...
+// Alerts returns a slice of alerts containing the currently active alerts as of
+// the last time they were retrieved.
 func (c *Client) Alerts(id string) ([]Alert, error) {
 	// update LastRetrieved if there is no error from getActiveAlertsForPoint()
 	// in case of error, still return alerts and log the error?
 	return c.alerts, nil
 }
 
-// SemidailyForecast ...
+// SemidailyForecast returns the last retrieved semi-daily forecast.
+//
+// The NWS tends to refer to the semi-daily forecast as simply "forecast."
 func (c *Client) SemidailyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
@@ -179,7 +187,7 @@ func (c *Client) SemidailyForecast() (Forecast, error) {
 	return *f, err
 }
 
-// HourlyForecast ...
+// HourlyForecast returns the last retrieved hourly forcast.
 func (c *Client) HourlyForecast() (Forecast, error) {
 	// update LastRetrieved
 	// set value in c
@@ -187,7 +195,8 @@ func (c *Client) HourlyForecast() (Forecast, error) {
 	return *f, err
 }
 
-// LatestObservationForDefaultStation ...
+// LatestObservationForDefaultStation returns the last retrieved observation
+// for the default station.
 func (c *Client) LatestObservationForDefaultStation() (Observation, error) {
 	// TODO: Figure out how to recrod last retrieved time for each.
 	// Perhaps these should be within c.stations[i].observation.
@@ -196,9 +205,37 @@ func (c *Client) LatestObservationForDefaultStation() (Observation, error) {
 	return c.observations[c.defaultStationID].observation, nil
 }
 
-// LatestObservationForStation ...
+// LatestObservationForStation returns the last retrieved observation for a
+// station.
 func (c *Client) LatestObservationForStation(id string) (Observation, error) {
 	return c.observations[id].observation, nil
+}
+
+// UpdateAlerts updates the active alerts for this Client.
+func (c *Client) UpdateAlerts() error {
+	return nil
+}
+
+// UpdateSemidailyForecast updates the semi-daily forecast for this Client.
+func (c *Client) UpdateSemidailyForecast() error {
+	return nil
+}
+
+// UpdateHourlyForecast updates the hourly forecast for this Client.
+func (c *Client) UpdateHourlyForecast() error {
+	return nil
+}
+
+// UpdateLatestObservationForDefaultStation updates the latest observation for
+// the default station.
+func (c *Client) UpdateLatestObservationForDefaultStation() error {
+	return nil
+}
+
+// UpdateLatestOservationForStation updates the latest observation for
+// a station..
+func (c *Client) UpdateLatestOservationForStation() error {
+	return nil
 }
 
 // setGridpointFromPoint ...
