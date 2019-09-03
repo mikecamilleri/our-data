@@ -116,14 +116,26 @@ func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString strin
 
 // Need to create separate Update* funtion for Observations, Alerts, and
 // *Forecast. I.e.:
+//     func (c *Client) UpdateAlerts() error {}
+//     func (c *Client) Alerts() []Alert {}
 //
-// func (c *Client) UpdateAlerts() error {}
-// func (c *Client) Alerts() []Alert {}
+// Update* functions will do the work of actually updating the data in the
+// in the struct. If it is too soon to update based on the throttle, then
+// an error will be returned, possibly containing the earliest time Update*
+// should be called again
+//    var err error
+//    var alerts []Alert
+//    err = UpdateAlerts()
+//    if err != nil {
+//        // handle error
+//    } else {
+//        alerts = Alert()
+//    }
 //
 // *LastRetrived functions would help the caller know when to request an update
 //
-// Functions that automatically update and return on a channel would be useful
-// too. Not sure if it's best to implement those in the client.
+// Also create Auto* functions that automatically update and send new data
+// on a channel
 //
 
 // Point ...
