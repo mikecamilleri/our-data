@@ -244,10 +244,13 @@ func (c *Client) UpdateLatestOservationForStation() error {
 // // AutoAlerts should be run as a goroutine. AutoAlerts will instatiate the
 // // Client's AutoAlertsChan upon execution and will return when it detects that
 // // the channel is closed.
+// //
+// // NOTE!: The above is actually dangerous. The reciever should never close a
+// // channel. Use a stopChan instead
 // func (c *Client) AutoAlerts() error {
 // 	return nil
 // }
-
+//
 // // StopAutoAlerts will stop an active AutoAlerts goroutine by closing its
 // // channel.
 // func (c *Client) StopAutoAlerts() error {
