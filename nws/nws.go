@@ -54,11 +54,11 @@ type Client struct {
 	// updating the latest observation for any station.
 	ObservationsThrottle time.Duration
 
-	// TODO: the channels below will be used by Auto* functions.
-	AlertChan             chan []Alert
-	SemidailyForecastChan chan Forecast
-	HourlyForecastChan    chan Forecast
-	ObservationChans      map[string]chan Observation
+	// // TODO: the channels below will be used by Auto* functions.
+	// AutoAlertsChan            chan []Alert
+	// AutoSemidailyForecastChan chan Forecast
+	// AutoHourlyForecastChan    chan Forecast
+	// AutoObservationChans      map[string]chan Observation
 
 	httpClient                     *http.Client
 	httpUserAgentString            string
@@ -237,6 +237,22 @@ func (c *Client) UpdateLatestObservationForDefaultStation() error {
 func (c *Client) UpdateLatestOservationForStation() error {
 	return nil
 }
+
+// // AutoAlerts will automatically update and emit updated slices of Alerts on
+// // the Client's AutoAlertsChan
+// //
+// // AutoAlerts should be run as a goroutine. AutoAlerts will instatiate the
+// // Client's AutoAlertsChan upon execution and will return when it detects that
+// // the channel is closed.
+// func (c *Client) AutoAlerts() error {
+// 	return nil
+// }
+
+// // StopAutoAlerts will stop an active AutoAlerts goroutine by closing its
+// // channel.
+// func (c *Client) StopAutoAlerts() error {
+// 	return nil
+// }
 
 // setGridpointFromPoint ...
 func (c *Client) setGridpointFromPoint() error {
