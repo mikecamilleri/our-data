@@ -125,7 +125,7 @@ type Alert struct {
 	MessageType string   // must be a key in AlertMessageTypes
 	References  []string // IDs of alerts that this alert affects based on MessageType
 
-	Category        string // must ge a key in AlertCategories
+	Category        string // must be a key in AlertCategories
 	Severity        string // must be a key in AlertSeverities
 	Certainty       string // must be a key in AlertCertainties
 	Urgency         string // must be a key in Alert Urgencies

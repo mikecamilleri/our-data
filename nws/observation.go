@@ -28,7 +28,7 @@ const getLatestObeservationForStationEndpointURLStringFmt = "stations/%s/observa
 var observationUnitCodes = map[string]string{
 	"unit:degC":           "C",
 	"unit:degree_(angle)": "degrees true",
-	"unit:unit:m_s-1":     "m/s",
+	"unit:m_s-1":          "m/s",
 	"unit:Pa":             "Pa",
 	"unit:m":              "m",
 	"unit:percent":        "percent",
@@ -84,6 +84,10 @@ func newObservationFromStationObservationRespBody(respBody []byte) (*Observation
 	// TODO: Eventually it probably makes sense to just parse the METAR. This
 	// endpoint seems to be converting everything to SI units which doesn't
 	// make sense given the source (METAR) and typical use of these data.
+
+	// TODO: Currently the WMO uit codes are converted to easier to read unit
+	// names. Eventually these should be standardized among packages in this
+	// Git repo. These are also inconsistant with the forecast data from NWS.
 
 	// unmarshal the body into a temporary struct
 	oRaw := struct {

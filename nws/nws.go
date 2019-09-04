@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package nws ...
+// Package nws implements a client for interacting with the United States
+// National Weather Service API Web Service. The client implements a subset of
+// available endpoints. This package is location centric. Each client is
+// structured around a single point on earth and is able to retrieve data from
+// the National Weather Service relating to that point.
 package nws
 
 import (
@@ -28,12 +32,6 @@ const (
 	baseURLString         = "https://api.weather.gov/"
 	defaultThrottleString = "5m"
 )
-
-// A ValueUnit represents a value and its unit (e.g. 32 inches).
-type ValueUnit struct {
-	Value float64
-	Unit  string
-}
 
 // A Client is used to interact with the NWS API for a specific location on
 // Earth.
@@ -54,28 +52,26 @@ type Client struct {
 	// updating the latest observation for any station.
 	ObservationsThrottle time.Duration
 
-	// // TODO: the channels below will be used by Auto* functions.
-	// AutoAlertsChan            chan []Alert
-	// AutoSemidailyForecastChan chan Forecast
-	// AutoHourlyForecastChan    chan Forecast
-	// AutoObservationChans      map[string]chan Observation
+	httpClient          *http.Client
+	httpUserAgentString string
+	point               Point
+	gridpoint           Gridpoint
+	stations            []Station
+	defaultStationID    string
+	alerts              []Alert
+	semidailyForecast   Forecast
+	hourlyForecast      Forecast
+	observations        map[string]ObsTime // key is a station ID
 
-	httpClient                     *http.Client
-	httpUserAgentString            string
-	point                          Point
-	gridpoint                      Gridpoint
-	stations                       []Station
-	defaultStationID               string
-	alerts                         []Alert
 	alertsLastRetrived             time.Time
-	semidailyForecast              Forecast
 	semidailyForecastLastRetrieved time.Time
-	hourlyForecast                 Forecast
 	hourlyForecastLastRetrieved    time.Time
-	observations                   map[string]struct {
-		observation              Observation
-		observarionLastRetrieved time.Time
-	} // the observations key is a station ID
+}
+
+// ObsTime holds an observation and the time that it was last retrieved
+type ObsTime struct {
+	observation              Observation
+	observationLastRetrieved time.Time
 }
 
 // NewClientFromCoordinates creates a new client given a WGS 84 (EPSG:4326)
@@ -131,37 +127,28 @@ func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString strin
 	return c, nil
 }
 
-// TODO:
-//
-// *LastRetrived functions would help the caller know when to request an update
-//
-// Also create Auto* functions that automatically update and send new data
-// on a channel
-//     - add channels to client
-//
-
 // Point returns the Point for this Client.
-func (c *Client) Point() (Point, error) {
-	return c.point, nil
+func (c *Client) Point() Point {
+	return c.point
 }
 
 // Gridpoint returns the Gridpoint for this Client.
-func (c *Client) Gridpoint() (Gridpoint, error) {
-	return c.gridpoint, nil
+func (c *Client) Gridpoint() Gridpoint {
+	return c.gridpoint
 }
 
 // Stations returns the list of weather stations for this client.
 //
 // These appear to be ordered based on proximity to the Point used to retrieve
 // them, but this isn't documented.
-func (c *Client) Stations() ([]Station, error) {
-	return c.stations, nil
+func (c *Client) Stations() []Station {
+	return c.stations
 }
 
 // DefaultStationID returns the ID of the default weather station for this
 // Client
-func (c *Client) DefaultStationID() (string, error) {
-	return c.defaultStationID, nil
+func (c *Client) DefaultStationID() string {
+	return c.defaultStationID
 }
 
 // SetDefaultStationID changes the default station ID.
@@ -171,93 +158,130 @@ func (c *Client) SetDefaultStationID(id string) error {
 
 // Alerts returns a slice of alerts containing the currently active alerts as of
 // the last time they were retrieved.
-func (c *Client) Alerts(id string) ([]Alert, error) {
-	// update LastRetrieved if there is no error from getActiveAlertsForPoint()
-	// in case of error, still return alerts and log the error?
-	return c.alerts, nil
+func (c *Client) Alerts(id string) []Alert {
+	return c.alerts
 }
 
 // SemidailyForecast returns the last retrieved semi-daily forecast.
 //
 // The NWS tends to refer to the semi-daily forecast as simply "forecast."
-func (c *Client) SemidailyForecast() (Forecast, error) {
-	// update LastRetrieved
-	// set value in c
-	f, err := getSemidailyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
-	return *f, err
+func (c *Client) SemidailyForecast() Forecast {
+	return c.semidailyForecast
 }
 
 // HourlyForecast returns the last retrieved hourly forcast.
-func (c *Client) HourlyForecast() (Forecast, error) {
-	// update LastRetrieved
-	// set value in c
-	f, err := getHourlyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
-	return *f, err
+func (c *Client) HourlyForecast() Forecast {
+	return c.hourlyForecast
 }
 
 // LatestObservationForDefaultStation returns the last retrieved observation
 // for the default station.
-func (c *Client) LatestObservationForDefaultStation() (Observation, error) {
-	// TODO: Figure out how to recrod last retrieved time for each.
-	// Perhaps these should be within c.stations[i].observation.
-	// That would likeley be best.
-	// The interface of these private attributes doesn't matter as much.
-	return c.observations[c.defaultStationID].observation, nil
+func (c *Client) LatestObservationForDefaultStation() Observation {
+	// return empty observation if station does not exist in obeservations map
+	return c.observations[c.defaultStationID].observation
 }
 
 // LatestObservationForStation returns the last retrieved observation for a
 // station.
-func (c *Client) LatestObservationForStation(id string) (Observation, error) {
-	return c.observations[id].observation, nil
+func (c *Client) LatestObservationForStation(id string) Observation {
+	// return empty observation if station does not exist in obeservations map
+	return c.observations[id].observation
 }
 
 // UpdateAlerts updates the active alerts for this Client.
 func (c *Client) UpdateAlerts() error {
+	alerts, err := getActiveAlertsForPoint(c.httpClient, c.httpUserAgentString, c.point)
+	if err != nil {
+		return err
+	}
+	c.alerts = alerts
+	c.alertsLastRetrived = time.Now()
 	return nil
 }
 
 // UpdateSemidailyForecast updates the semi-daily forecast for this Client.
 func (c *Client) UpdateSemidailyForecast() error {
+	f, err := getSemidailyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	if err != nil {
+		return err
+	}
+	c.semidailyForecast = *f
+	c.semidailyForecastLastRetrieved = f.TimeRetrieved
 	return nil
 }
 
 // UpdateHourlyForecast updates the hourly forecast for this Client.
 func (c *Client) UpdateHourlyForecast() error {
+	f, err := getHourlyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	if err != nil {
+		return err
+	}
+	c.hourlyForecast = *f
+	c.hourlyForecastLastRetrieved = f.TimeRetrieved
 	return nil
 }
 
 // UpdateLatestObservationForDefaultStation updates the latest observation for
 // the default station.
 func (c *Client) UpdateLatestObservationForDefaultStation() error {
+	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, c.defaultStationID)
+	if err != nil {
+		return err
+	}
+	c.observations[c.defaultStationID] = ObsTime{
+		observation:              *o,
+		observationLastRetrieved: o.TimeRetrieved,
+	}
 	return nil
 }
 
 // UpdateLatestOservationForStation updates the latest observation for
-// a station..
-func (c *Client) UpdateLatestOservationForStation() error {
+// a station.
+func (c *Client) UpdateLatestOservationForStation(id string) error {
+	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, id)
+	if err != nil {
+		return err
+	}
+	c.observations[id] = ObsTime{
+		observation:              *o,
+		observationLastRetrieved: o.TimeRetrieved,
+	}
 	return nil
 }
 
-// // AutoAlerts will automatically update and emit updated slices of Alerts on
-// // the Client's AutoAlertsChan
-// //
-// // AutoAlerts should be run as a goroutine. AutoAlerts will instatiate the
-// // Client's AutoAlertsChan upon execution and will return when it detects that
-// // the channel is closed.
-// //
-// // NOTE!: The above is actually dangerous. The reciever should never close a
-// // channel. Use a stopChan instead
-// func (c *Client) AutoAlerts() error {
-// 	return nil
-// }
-//
-// // StopAutoAlerts will stop an active AutoAlerts goroutine by closing its
-// // channel.
-// func (c *Client) StopAutoAlerts() error {
-// 	return nil
-// }
+// AlertsLastRetrieved returns the time that alerts waere last successfuly
+// retrieved.
+func (c *Client) AlertsLastRetrieved(id string) time.Time {
+	return c.alertsLastRetrived
+}
 
-// setGridpointFromPoint ...
+// SemidailyForecastLastRetrieved returns the time that the semi-daily forecast
+// was last successfuly retrieved.
+func (c *Client) SemidailyForecastLastRetrieved() time.Time {
+	return c.semidailyForecastLastRetrieved
+}
+
+// HourlyForecastLastRetrieved returns the time that hourly forecast was last
+// successfuly retrieved.
+func (c *Client) HourlyForecastLastRetrieved() time.Time {
+	return c.hourlyForecastLastRetrieved
+}
+
+// LatestObservationForDefaultStationLastRetrieved returns the time that the
+// latesst observation for the default station was last successfuly retrieved.
+func (c *Client) LatestObservationForDefaultStationLastRetrieved() time.Time {
+	// return zero time if station does not exist in obeservations map
+	return c.observations[c.defaultStationID].observationLastRetrieved
+}
+
+// LatestObservationForStationLastRetrieved returns the time that the latest
+// observations for the specified station was last successfuly retrieved.
+func (c *Client) LatestObservationForStationLastRetrieved(id string) time.Time {
+	// return zero time if station does not exist in obeservations map
+	return c.observations[id].observationLastRetrieved
+}
+
+// setGridpointFromPoint set the Client's gridpoint from its point.
 func (c *Client) setGridpointFromPoint() error {
 	gp, err := getGridpointForPoint(c.httpClient, c.httpUserAgentString, c.point)
 	if err != nil {
@@ -267,7 +291,7 @@ func (c *Client) setGridpointFromPoint() error {
 	return nil
 }
 
-// setStationsFromGridpont ...
+// setStationsFromGridpont sets the Client's stations from its gridpoint.
 func (c *Client) setStationsFromGridpont() error {
 	stns, err := getStationsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
 	if err != nil {
@@ -277,8 +301,12 @@ func (c *Client) setStationsFromGridpont() error {
 	return nil
 }
 
-// setDefaultStationID ...
+// setDefaultStationID sets the Client's default station to the first station in
+// its stations slice.
 func (c *Client) setDefaultStationID(id string) error {
+	if len(c.stations) < 1 {
+		return errors.New("client has no stations")
+	}
 	c.defaultStationID = c.stations[0].ID
 	return nil
 }
