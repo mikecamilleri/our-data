@@ -65,10 +65,11 @@ type Observation struct {
 
 // getLatestObservationForStation retrieves from the NWS API the latest
 // observation from a particular station.
-func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString string, stationID string) (*Observation, error) {
+func getLatestObservationForStation(httpClient *http.Client, httpUserAgentString string, apiURLString string, stationID string) (*Observation, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
+		apiURLString,
 		fmt.Sprintf(getLatestObeservationForStationEndpointURLStringFmt, stationID),
 		nil,
 	)

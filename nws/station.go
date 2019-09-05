@@ -33,10 +33,11 @@ type Station struct {
 
 // getStationsForGridpoint retrieves from the NWS API a list of stations that
 // are proximal to a particular gridpoint.
-func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) ([]Station, error) {
+func getStationsForGridpoint(httpClient *http.Client, httpUserAgentString string, apiURLString string, gridpoint Gridpoint) ([]Station, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
+		apiURLString,
 		fmt.Sprintf(
 			getStationsForGridpointEndpointURLStringFmt,
 			gridpoint.WFO,

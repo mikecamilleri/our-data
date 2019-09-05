@@ -21,15 +21,17 @@ package nws
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
 const (
-	baseURLString         = "https://api.weather.gov/"
+	defaultAPIURLString   = "https://api.weather.gov/"
 	defaultThrottleString = "5m"
 )
 
@@ -54,6 +56,7 @@ type Client struct {
 
 	httpClient          *http.Client
 	httpUserAgentString string
+	apiURLString        string
 	point               Point
 	gridpoint           Gridpoint
 	stations            []Station
@@ -103,6 +106,10 @@ func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString strin
 		},
 	}
 
+	if err = c.setAPIURLString(defaultAPIURLString); err != nil {
+		return nil, err
+	}
+
 	if err = c.setGridpointFromPoint(); err != nil {
 		return nil, err
 	}
@@ -125,6 +132,14 @@ func NewClientFromCoordinates(httpClient *http.Client, httpUserAgentString strin
 	c.HourlyForecastThrottle = defaultThrottle
 
 	return c, nil
+}
+
+// SetAPIURLString sets the URL of the NWS API Web Service.
+//
+// The url must begin with `http` (`https` is inherently acceptable) and end
+// with a slash (`/`).
+func (c *Client) SetAPIURLString(urlString string) error {
+	return c.setAPIURLString(urlString)
 }
 
 // Point returns the Point for this Client.
@@ -190,7 +205,7 @@ func (c *Client) LatestObservationForStation(id string) Observation {
 
 // UpdateAlerts updates the active alerts for this Client.
 func (c *Client) UpdateAlerts() error {
-	alerts, err := getActiveAlertsForPoint(c.httpClient, c.httpUserAgentString, c.point)
+	alerts, err := getActiveAlertsForPoint(c.httpClient, c.httpUserAgentString, c.apiURLString, c.point)
 	if err != nil {
 		return err
 	}
@@ -201,7 +216,7 @@ func (c *Client) UpdateAlerts() error {
 
 // UpdateSemidailyForecast updates the semi-daily forecast for this Client.
 func (c *Client) UpdateSemidailyForecast() error {
-	f, err := getSemidailyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	f, err := getSemidailyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.apiURLString, c.gridpoint)
 	if err != nil {
 		return err
 	}
@@ -212,7 +227,7 @@ func (c *Client) UpdateSemidailyForecast() error {
 
 // UpdateHourlyForecast updates the hourly forecast for this Client.
 func (c *Client) UpdateHourlyForecast() error {
-	f, err := getHourlyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	f, err := getHourlyForecastForGridpoint(c.httpClient, c.httpUserAgentString, c.apiURLString, c.gridpoint)
 	if err != nil {
 		return err
 	}
@@ -224,7 +239,7 @@ func (c *Client) UpdateHourlyForecast() error {
 // UpdateLatestObservationForDefaultStation updates the latest observation for
 // the default station.
 func (c *Client) UpdateLatestObservationForDefaultStation() error {
-	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, c.defaultStationID)
+	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, c.apiURLString, c.defaultStationID)
 	if err != nil {
 		return err
 	}
@@ -238,7 +253,7 @@ func (c *Client) UpdateLatestObservationForDefaultStation() error {
 // UpdateLatestOservationForStation updates the latest observation for
 // a station.
 func (c *Client) UpdateLatestOservationForStation(id string) error {
-	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, id)
+	o, err := getLatestObservationForStation(c.httpClient, c.httpUserAgentString, c.apiURLString, id)
 	if err != nil {
 		return err
 	}
@@ -281,9 +296,24 @@ func (c *Client) LatestObservationForStationLastRetrieved(id string) time.Time {
 	return c.observations[id].observationLastRetrieved
 }
 
+// setAPIURLString sets the URL of the NWS API Web Service.
+//
+// The url must begin with `http` (`https` is inherently acceptable) and end
+// with a slash (`/`).
+func (c *Client) setAPIURLString(urlString string) error {
+	if !strings.HasPrefix(urlString, "http") {
+		return fmt.Errorf("urlString must begin with `http`: %s", urlString)
+	}
+	if !strings.HasSuffix(urlString, "/") {
+		return fmt.Errorf("urlString must end with a slash (`/`): %s", urlString)
+	}
+	c.apiURLString = urlString
+	return nil
+}
+
 // setGridpointFromPoint set the Client's gridpoint from its point.
 func (c *Client) setGridpointFromPoint() error {
-	gp, err := getGridpointForPoint(c.httpClient, c.httpUserAgentString, c.point)
+	gp, err := getGridpointForPoint(c.httpClient, c.httpUserAgentString, c.apiURLString, c.point)
 	if err != nil {
 		return err
 	}
@@ -293,7 +323,7 @@ func (c *Client) setGridpointFromPoint() error {
 
 // setStationsFromGridpont sets the Client's stations from its gridpoint.
 func (c *Client) setStationsFromGridpont() error {
-	stns, err := getStationsForGridpoint(c.httpClient, c.httpUserAgentString, c.gridpoint)
+	stns, err := getStationsForGridpoint(c.httpClient, c.httpUserAgentString, c.apiURLString, c.gridpoint)
 	if err != nil {
 		return err
 	}
@@ -314,9 +344,9 @@ func (c *Client) setDefaultStationID(id string) error {
 // doAPIRequest both makes a GET request to the specified endpoint and handles
 // non-200 responses. get will only return an *http.Rsponse with a 200 status
 // code.
-func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint string, query url.Values) ([]byte, error) {
+func doAPIRequest(httpClient *http.Client, httpUserAgentString string, apiURLString string, endpoint string, query url.Values) ([]byte, error) {
 	// build the request
-	req, err := http.NewRequest("GET", baseURLString+endpoint, nil)
+	req, err := http.NewRequest("GET", apiURLString+endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -333,8 +363,6 @@ func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint 
 	}
 	defer resp.Body.Close()
 
-	// see below for why this is done here instead of after checking status
-	// code. Setting this up for TODOs below.
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -343,9 +371,8 @@ func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint 
 	// check status code, return error if not 200
 	// TODO: handle errors like server side timeouts, this is difficult because
 	// the API is so sparsely documented.
-	// TODO: do something with the response body if error
 	if resp.StatusCode != 200 {
-		return nil, errors.New(resp.Status)
+		return nil, fmt.Errorf("%s: %s", resp.Status, respBody)
 	}
 
 	return respBody, nil

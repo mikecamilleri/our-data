@@ -139,7 +139,7 @@ type Alert struct {
 
 // getActiveAlertsForPoint retrieves from the NWS API active alerts for a given
 // point.
-func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string, point Point) ([]Alert, error) {
+func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string, apiURLString string, point Point) ([]Alert, error) {
 	// It may be more efficient to use "zone" or "area", but it isn't clear from
 	// the limited documentation whish is most appropriate. "Point" seems like it
 	// has the best chance of returning appropriate/relevent alerts.
@@ -147,6 +147,7 @@ func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string
 	query.Add("point", fmt.Sprintf("%f,%f", point.Lat, point.Lon))
 	respBody, err := doAPIRequest(
 		httpClient,
+		apiURLString,
 		httpUserAgentString,
 		fmt.Sprintf(getActiveAlertsForPointEndpointURLStringFmt),
 		query,

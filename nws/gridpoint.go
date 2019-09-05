@@ -35,10 +35,11 @@ type Gridpoint struct {
 
 // getGridpointForPoint retrieves from the NWS API the gridpoint that contains a
 // particular point.
-func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, point Point) (*Gridpoint, error) {
+func getGridpointForPoint(httpClient *http.Client, httpUserAgentString string, apiURLString string, point Point) (*Gridpoint, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
+		apiURLString,
 		fmt.Sprintf(getGridpointForPointEndpointURLStringFmt, point.Lat, point.Lon),
 		nil,
 	)

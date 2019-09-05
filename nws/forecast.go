@@ -65,10 +65,11 @@ type Period struct {
 // semni-daily forecast for a particular gridpoint.
 //
 // The NWS tends to refer to semni-daily forecasts simply as "forecast."
-func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, apiURLString string, gridpoint Gridpoint) (*Forecast, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
+		apiURLString,
 		fmt.Sprintf(
 			getSemidailyForecastForGridpointEndpointURLStringFmt,
 			gridpoint.WFO,
@@ -85,10 +86,11 @@ func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentStri
 
 // getHourlyForecastForGridpoint retrieves from the NWS API the latest
 // hourly forecast for a particular gridpoint.
-func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
+func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, apiURLString string, gridpoint Gridpoint) (*Forecast, error) {
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
+		apiURLString,
 		fmt.Sprintf(getHourlyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY),
 		nil,
 	)
