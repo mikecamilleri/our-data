@@ -341,7 +341,8 @@ func doAPIRequest(httpClient *http.Client, httpUserAgentString string, endpoint 
 	}
 
 	// check status code, return error if not 200
-	// TODO: handle errors like server side timeouts
+	// TODO: handle errors like server side timeouts, this is difficult because
+	// the API is so sparsely documented.
 	// TODO: do something with the response body if error
 	if resp.StatusCode != 200 {
 		return nil, errors.New(resp.Status)

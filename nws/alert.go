@@ -144,7 +144,7 @@ func getActiveAlertsForPoint(httpClient *http.Client, httpUserAgentString string
 	// the limited documentation whish is most appropriate. "Point" seems like it
 	// has the best chance of returning appropriate/relevent alerts.
 	var query url.Values
-	query.Add("point", fmt.Sprintf("%s,%s", point.Lat, point.Lon))
+	query.Add("point", fmt.Sprintf("%f,%f", point.Lat, point.Lon))
 	respBody, err := doAPIRequest(
 		httpClient,
 		httpUserAgentString,
@@ -190,7 +190,7 @@ func newAlertsFromAlertsRespBody(respBody []byte) ([]Alert, error) {
 			}
 		}
 	}{}
-	if err := json.Unmarshal(respBody, alertsRaw); err != nil {
+	if err := json.Unmarshal(respBody, &alertsRaw); err != nil {
 		return nil, err
 	}
 

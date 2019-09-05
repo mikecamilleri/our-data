@@ -24,8 +24,8 @@ import (
 )
 
 const (
-	getSemidailyForecastForGridpointEndpointURLStringFmt = "gridpoints/%s/%f,%f/forecast"        // wfo, lat, lon
-	getHourlyForecastForGridpointEndpointURLStringFmt    = "gridpoints/%s/%f,%f/forecast/hourly" // wfo, lat, lon
+	getSemidailyForecastForGridpointEndpointURLStringFmt = "gridpoints/%s/%d,%d/forecast"        // wfo, lat, lon
+	getHourlyForecastForGridpointEndpointURLStringFmt    = "gridpoints/%s/%d,%d/forecast/hourly" // wfo, lat, lon
 )
 
 // A Forecast represents a forecast for a specific place on Earth returned from
@@ -86,7 +86,12 @@ func getSemidailyForecastForGridpoint(httpClient *http.Client, httpUserAgentStri
 // getHourlyForecastForGridpoint retrieves from the NWS API the latest
 // hourly forecast for a particular gridpoint.
 func getHourlyForecastForGridpoint(httpClient *http.Client, httpUserAgentString string, gridpoint Gridpoint) (*Forecast, error) {
-	respBody, err := doAPIRequest(httpClient, httpUserAgentString, fmt.Sprintf(getHourlyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY), nil)
+	respBody, err := doAPIRequest(
+		httpClient,
+		httpUserAgentString,
+		fmt.Sprintf(getHourlyForecastForGridpointEndpointURLStringFmt, gridpoint.WFO, gridpoint.GridX, gridpoint.GridY),
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +121,7 @@ func newForecastFromForecastRespBody(respBody []byte) (*Forecast, error) {
 			}
 		}
 	}{}
-	if err := json.Unmarshal(respBody, fRaw); err != nil {
+	if err := json.Unmarshal(respBody, &fRaw); err != nil {
 		return nil, err
 	}
 
