@@ -1,5 +1,7 @@
 # our-data-go/nws
 
+_**Note:** This project is presently dead and I have no immediate plans to finish it. This is in part due to other priorities, and in part because of the instability of the NWS APIs. Once the APIs are more stable, I may continue work here or re-implement in another language (Python?)._
+
 Interact with the United States National Weather Service (NWS) API Web Service in Go. 
 
 ## Introduction
@@ -10,7 +12,7 @@ The "API Web Service" used in this package is (somewhat) documented [here](https
 
 ## State of the API and this package
 
-**WARNING!:** This project is a work in progress and absolutely not production ready. The exported interface may be unstable.
+This project is a work in progress and absolutely not production ready. The exported interface may be unstable.
 
 The API that this package interacts with is itself a work in progress. According to the specification tab [here](https://www.weather.gov/documentation/services-web-api), only `alerts/*` endpoints are currently considered operational by the NWS.
 
